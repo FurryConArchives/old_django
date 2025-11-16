@@ -1,0 +1,76 @@
+{% extends 'archive/admin/base_admin.html' %}
+
+{% block title %}Manage Tags - Admin{% endblock %}
+
+{% block content %}
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+    <div class="card">
+        <h3 style="margin-bottom: 1rem;">Create New Tag</h3>
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="{{ form.name.id_for_label }}">Tag Name *</label>
+                {{ form.name }}
+                {% if form.name.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.name.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.description.id_for_label }}">Description</label>
+                {{ form.description }}
+                {% if form.description.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.description.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+            
+            <button type="submit" class="btn btn-success">Create Tag</button>
+        </form>
+    </div>
+    
+    <div class="card">
+        <h3 style="margin-bottom: 1rem;">Existing Tags</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Documents</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tag in tags %}
+                <tr>
+                    <td><strong>{{ tag.name }}</strong></td>
+                    <td>{{ tag.description|truncatewords:10|default:"-" }}</td>
+                    <td>{{ tag.doc_count }}</td>
+                    <td>
+                        <div class="actions">
+                            <a href="{% url 'document_list' %}?tag={{ tag.slug }}" class="btn btn-small btn-secondary" target="_blank">View</a>
+                            <a href="{% url 'admin_delete_tag' tag.id %}" class="btn btn-small btn-danger">Delete</a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                        No tags yet. Create one using the form on the left.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

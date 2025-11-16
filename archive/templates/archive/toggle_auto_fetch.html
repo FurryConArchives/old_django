@@ -1,0 +1,17 @@
+{% extends 'archive/base.html' %}
+{% block title %}Toggle Auto-Fetch - Furry Con Archives{% endblock %}
+{% block content %}
+<div class="board-container" style="max-width: 600px; margin: 2rem auto;">
+    <h2>Schedule Auto-Fetch</h2>
+    <form method="post">
+        {% csrf_token %}
+        {% if is_running %}
+            <p style="color: green;">Auto-fetch is <strong>enabled</strong>.</p>
+            <button type="submit" name="action" value="stop" class="nav-btn danger">Stop Auto-Fetch</button>
+        {% else %}
+            <p style="color: red;">Auto-fetch is <strong>disabled</strong>.</p>
+            <button type="submit" name="action" value="start" class="nav-btn">Start Auto-Fetch</button>
+        {% endif %}
+    </form>
+</div>
+{% endblock %}

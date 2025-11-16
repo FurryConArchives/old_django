@@ -1,0 +1,55 @@
+{% extends "archive/base.html" %}
+{% block title %}Admin Panel{% endblock %}
+{% block content %}
+<div class="admin-sidebar">
+    <nav class="admin-nav">
+        <a href="{% url 'admin_dashboard' %}" class="admin-nav-link"><i class="bi bi-speedometer2"></i> Dashboard</a>
+        <a href="{% url 'admin_documents' %}" class="admin-nav-link"><i class="bi bi-file-earmark-text"></i> Manage Documents</a>
+        <a href="{% url 'admin_categories' %}" class="admin-nav-link"><i class="bi bi-folder"></i> Manage Categories</a>
+        <a href="{% url 'admin_physical_inventory' %}" class="admin-nav-link"><i class="bi bi-box-seam"></i> The Vault</a>
+        <a href="{% url 'admin_statistics' %}" class="admin-nav-link"><i class="bi bi-bar-chart"></i> Statistics</a>
+        <a href="{% url 'index' %}" class="admin-nav-link"><i class="bi bi-globe"></i> View Public Site</a>
+        <a href="/admin" class="admin-nav-link"><i class="bi bi-tools"></i> Django Admin</a>
+        <a href="{% url 'admin_logout' %}" class="admin-nav-link"><i class="bi bi-box-arrow-right"></i> Logout</a>
+    </nav>
+</div>
+<div class="admin-content">
+    {% block admin_content %}{% endblock %}
+</div>
+{% endblock %}
+<style>
+.admin-sidebar {
+    width: 220px;
+    background: var(--bg-secondary);
+    min-height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow);
+    padding-top: 2rem;
+}
+.admin-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    padding-left: 1.5rem;
+}
+.admin-nav-link {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    transition: color 0.2s;
+}
+.admin-nav-link:hover, .admin-nav-link.active {
+    color: var(--accent-color);
+}
+.admin-content {
+    margin-left: 240px;
+    padding: 2rem 2rem 2rem 0;
+}
+</style>

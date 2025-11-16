@@ -1,0 +1,57 @@
+{% for category in categories %}
+<a href="{% url 'convention_detail' slug=category.slug %}" class="category-card category-card-link">
+    <div class="category-logo-container">
+        {% with latest_event=category.latest_event %}
+            {% if latest_event and latest_event.convention.logoImage %}
+                <img src="{{ latest_event.convention.logoImage }}" alt="{{ category.name }} logo" class="category-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="category-logo-placeholder" style="display: none;">
+                    <i class="bi bi-folder-fill"></i>
+                </div>
+            {% elif category.logo %}
+                <img src="{{ category.logo }}" alt="{{ category.name }} logo" class="category-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="category-logo-placeholder" style="display: none;">
+                    <i class="bi bi-folder-fill"></i>
+                </div>
+            {% else %}
+                <div class="category-logo-placeholder">
+                    <i class="bi bi-folder-fill"></i>
+                </div>
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <div class="category-content">
+        <h2 class="category-name">{{ category.name }}</h2>
+
+        <div class="category-info">
+            {% with latest_event=category.latest_event %}
+                {% if latest_event and latest_event.address %}
+                <div class="info-item">
+                    <i class="bi bi-geo-alt"></i>
+                    <span><strong>Location:</strong> {{ latest_event.address }}</span>
+                </div>
+                {% elif category.location %}
+                <div class="info-item">
+                    <i class="bi bi-geo-alt"></i>
+                    <span><strong>Location:</strong> {{ category.location }}</span>
+                </div>
+                {% endif %}
+            {% endwith %}
+
+            {% if category.year_range %}
+            <div class="info-item">
+                <i class="bi bi-calendar-event"></i>
+                <span><strong>Active Years:</strong> {{ category.year_range }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="category-meta">
+            <div class="meta-badge">
+                <i class="bi bi-file-pdf"></i>
+                <span>{{ category.doc_count }} document{{ category.doc_count|pluralize }}</span>
+            </div>
+        </div>
+    </div>
+</a>
+{% endfor %}

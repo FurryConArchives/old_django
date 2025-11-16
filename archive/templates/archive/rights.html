@@ -1,0 +1,448 @@
+{% extends 'archive/base.html' %}
+
+{% block title %}Rights & Licensing - Furry Con Archives{% endblock %}
+
+{% block extra_css %}
+<style>
+    .rights-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .rights-header {
+        text-align: center;
+        margin-bottom: 4rem;
+        padding-bottom: 2rem;
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    .rights-header h1 {
+        font-size: 2.5rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, var(--text-primary), var(--accent-color));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        letter-spacing: -0.5px;
+    }
+
+    .rights-header h1 i {
+        color: var(--accent-color);
+        font-size: 2.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .rights-header h1:hover i {
+        transform: rotate(8deg) scale(1.1);
+    }
+
+    .rights-header p {
+        color: var(--text-secondary);
+        font-size: 1.05rem;
+        font-weight: 500;
+    }
+
+    .rights-section {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius);
+        padding: 2.5rem;
+        margin-bottom: 2.5rem;
+        box-shadow: var(--shadow);
+        transition: all 0.3s ease;
+    }
+
+    .rights-section:hover {
+        box-shadow: var(--shadow-hover);
+        border-color: var(--primary-color);
+        transform: translateY(-4px);
+    }
+
+    .rights-section h2 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid rgba(0, 212, 255, 0.15);
+    }
+
+    .rights-section h2 i {
+        color: var(--accent-color);
+        font-size: 1.6rem;
+    }
+
+    .rights-section p {
+        color: var(--text-secondary);
+        line-height: 1.8;
+        margin-bottom: 1.25rem;
+        font-size: 0.95rem;
+    }
+
+    .rights-section ul {
+        color: var(--text-secondary);
+        line-height: 1.8;
+        margin-left: 1.5rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .rights-section li {
+        margin-bottom: 0.6rem;
+    }
+
+    .license-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    .license-card {
+        background: linear-gradient(135deg, var(--bg-tertiary), var(--bg-primary));
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-sm);
+        padding: 1.75rem;
+        transition: all 0.3s ease;
+    }
+
+    .license-card:hover {
+        border-color: var(--accent-color);
+        box-shadow: var(--shadow-hover);
+        transform: translateY(-4px);
+    }
+
+    .license-card h3 {
+        color: var(--text-primary);
+        font-size: 1.15rem;
+        font-weight: 700;
+        margin-bottom: 0.85rem;
+    }
+
+    .license-card p {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        line-height: 1.7;
+        margin: 0;
+    }
+
+    .cc-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.6rem 1.2rem;
+        background: linear-gradient(135deg, rgba(0, 102, 204, 0.12), rgba(0, 212, 255, 0.08));
+        border: 1px solid rgba(0, 212, 255, 0.2);
+        border-radius: var(--radius-sm);
+        color: var(--text-primary);
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin: 0.5rem 0.5rem 0.5rem 0;
+        transition: all 0.3s ease;
+    }
+
+    .cc-badge:hover {
+        border-color: var(--accent-color);
+        background: linear-gradient(135deg, rgba(0, 102, 204, 0.2), rgba(0, 212, 255, 0.15));
+    }
+
+    .cc-badge i {
+        color: var(--accent-color);
+    }
+
+    .cc-badge:hover {
+        border-color: var(--accent-color);
+        background: linear-gradient(135deg, rgba(0, 102, 204, 0.2), rgba(0, 212, 255, 0.15));
+    }
+
+    .cc-badge:hover i {
+        transform: rotate(8deg) scale(1.1);
+    }
+
+    .highlight-box {
+        background: linear-gradient(135deg, rgba(0, 212, 255, 0.12), rgba(0, 102, 204, 0.08));
+        border-left: 4px solid var(--accent-color);
+        padding: 1.75rem;
+        margin: 2rem 0;
+        border-radius: var(--radius-sm);
+        border-top: 1px solid rgba(0, 212, 255, 0.2);
+        border-right: 1px solid rgba(0, 212, 255, 0.2);
+        border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+    }
+
+    .highlight-box p {
+        margin: 0;
+        color: var(--text-primary);
+        font-weight: 500;
+        line-height: 1.7;
+    }
+
+    /* Icon rotation on hover */
+    .rights-header h1 i,
+    .rights-section h2 i,
+    .rights-section h3 i,
+    .license-card h3 .cc-badge i,
+    .cc-badge i,
+    .highlight-box i,
+    .contact-button i {
+        transition: all 0.3s ease;
+        vertical-align: middle;
+        line-height: 1;
+        transform-origin: center;
+    }
+
+    .rights-header h1:hover i,
+    .rights-section:hover h2 i,
+    .rights-section:hover h3 i,
+    .license-card:hover h3 .cc-badge i,
+    .cc-badge:hover i,
+    .highlight-box:hover i,
+    .contact-button:hover i {
+        transform: rotate(8deg) scale(1.1);
+    }
+
+    @media (max-width: 768px) {
+        .rights-header {
+            margin-bottom: 2.5rem;
+            padding-bottom: 1.5rem;
+        }
+
+        .rights-header h1 {
+            font-size: 1.75rem;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .rights-header h1 i {
+            font-size: 2rem;
+        }
+
+        .rights-section {
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .rights-section h2 {
+            font-size: 1.25rem;
+            flex-wrap: wrap;
+        }
+
+        .license-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .highlight-box {
+            padding: 1.25rem;
+            margin: 1.25rem 0;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .rights-header h1 {
+            font-size: 1.5rem;
+        }
+
+        .rights-section {
+            padding: 1.15rem;
+        }
+
+        .cc-badge {
+            font-size: 0.8rem;
+            padding: 0.5rem 0.85rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="rights-container">
+    <div class="rights-header">
+        <h1><i class="bi bi-shield-check"></i> Rights & Licensing</h1>
+        <p>Understanding copyright, licensing, and permissions for convention booklets</p>
+    </div>
+
+    <div class="rights-section">
+        <h2><i class="bi bi-info-circle"></i> About Copyright & Licensing</h2>
+        <p>
+            Convention booklets (conbooks) are creative works that may be protected by copyright. 
+            The Furry Con Archives respects the rights of copyright holders while working to preserve 
+            these important historical documents for the furry community.
+        </p>
+        <p>
+            Each document in our archive may have different licensing terms. We display the license 
+            information provided by the copyright holder or convention organizers for each document.
+        </p>
+    </div>
+
+    <div class="rights-section">
+        <h2><i class="bi bi-award"></i> Creative Commons Licenses</h2>
+        <p>
+            Many convention booklets are released under Creative Commons (CC) licenses, which allow 
+            for various levels of sharing and reuse. Here's what each license means:
+        </p>
+        
+        <div class="license-grid">
+            <div class="license-card">
+                <h3><span class="cc-badge">CC0</span></h3>
+                <p><strong>Public Domain Dedication</strong><br>
+                The work is dedicated to the public domain. You can use it for any purpose without restrictions.</p>
+            </div>
+
+            <div class="license-card">
+                <h3><span class="cc-badge">CC BY</span></h3>
+                <p><strong>Attribution</strong><br>
+                You must give credit to the creator. You can use, modify, and distribute the work.</p>
+            </div>
+
+            <div class="license-card">
+                <h3><span class="cc-badge">CC BY-SA</span></h3>
+                <p><strong>Attribution-ShareAlike</strong><br>
+                You must give credit and license derivatives under the same terms.</p>
+            </div>
+
+            <div class="license-card">
+                <h3><span class="cc-badge">CC BY-ND</span></h3>
+                <p><strong>Attribution-NoDerivs</strong><br>
+                You must give credit. You cannot modify the work, but you can distribute it.</p>
+            </div>
+
+            <div class="license-card">
+                <h3><span class="cc-badge">CC BY-NC</span></h3>
+                <p><strong>Attribution-NonCommercial</strong><br>
+                You must give credit. You cannot use the work for commercial purposes.</p>
+            </div>
+
+            <div class="license-card">
+                <h3><span class="cc-badge">CC BY-NC-SA</span></h3>
+                <p><strong>Attribution-NonCommercial-ShareAlike</strong><br>
+                You must give credit, cannot use commercially, and must share derivatives under the same terms.</p>
+            </div>
+
+            <div class="license-card">
+                <h3><span class="cc-badge">CC BY-NC-ND</span></h3>
+                <p><strong>Attribution-NonCommercial-NoDerivs</strong><br>
+                Most restrictive. You must give credit, cannot use commercially, and cannot modify.</p>
+            </div>
+        </div>
+
+        <h3 style="margin-top: 2.5rem; font-size: 1.25rem;">Understanding License Components</h3>
+        <p>Creative Commons licenses are built from four core components:</p>
+        <ul>
+            <li><strong>Attribution (BY):</strong> You must credit the original creator</li>
+            <li><strong>ShareAlike (SA):</strong> Derivatives must be shared under the same license</li>
+            <li><strong>NoDerivs (ND):</strong> You cannot modify or adapt the work</li>
+            <li><strong>NonCommercial (NC):</strong> You cannot use the work for commercial purposes</li>
+        </ul>
+
+        <div class="highlight-box">
+            <p>
+                <i class="bi bi-info-circle"></i> 
+                <strong>Learn more:</strong> Visit 
+                <a href="https://creativecommons.org/licenses/" target="_blank" rel="noopener" style="color: var(--accent-color);">
+                    creativecommons.org
+                </a> 
+                for detailed information about each license.
+            </p>
+        </div>
+    </div>
+
+    <div class="rights-section">
+        <h2><i class="bi bi-scales"></i> <i class="bi bi-file-earmark-excel"></i> No License & Fair Use</h2>
+        <p>
+            Not all documents in the archive have explicit licensing information. When a document 
+            does not specify a license, the copyright holder retains all rights to the work. However, 
+            this does not mean the work cannot be used at all.
+        </p>
+
+        <h3>Fair Use Doctrine</h3>
+        <p>
+            In the United States, the fair use doctrine allows limited use of copyrighted material 
+            without permission under certain circumstances. Fair use typically applies to:
+        </p>
+        <ul>
+            <li><strong>Educational purposes:</strong> Teaching, scholarship, and research</li>
+            <li><strong>Criticism and commentary:</strong> Discussing or analyzing the work</li>
+            <li><strong>News reporting:</strong> Reporting on current events</li>
+            <li><strong>Transformative works:</strong> Creating new works that significantly transform the original</li>
+        </ul>
+
+        <div class="highlight-box">
+            <p>
+                <i class="bi bi-exclamation-triangle"></i>
+                <strong>Important:</strong> Fair use is a legal doctrine, not a license. Whether a specific 
+                use qualifies as fair use depends on factors like the purpose, nature, amount, and effect 
+                of the use. When in doubt, seek permission from the copyright holder or consult with a lawyer.
+            </p>
+        </div>
+
+        <h3>Our Approach</h3>
+        <p>
+            The Furry Con Archives preserves these documents for historical, educational, and cultural purposes. 
+            We believe preservation and access serve the broader interests of the furry community and deserve 
+            consideration under fair use doctrine. However, we respect copyright holders' rights and will:
+        </p>
+        <ul>
+            <li>Remove documents if requested by the copyright holder</li>
+            <li>Provide attribution and source information whenever possible</li>
+            <li>Prioritize documents with explicit open licenses</li>
+            <li>Work with copyright holders to properly license historical documents</li>
+        </ul>
+
+        <div class="highlight-box">
+            <p>
+                <i class="bi bi-lightbulb"></i>
+                <strong>Have questions about rights?</strong> Please refer to our 
+                <a href="{% url 'preservation_policy' %}" style="color: var(--accent-color);">Preservation Policy</a> 
+                for more information and contact details.
+            </p>
+        </div>
+    </div>
+
+    <div class="rights-section">
+        <h2><i class="bi bi-file-earmark-check"></i> Other Licenses</h2>
+        <p>
+            Beyond Creative Commons licenses, documents in the archive may be released under various 
+            other licensing arrangements or retain traditional copyright protection.
+        </p>
+        
+        <div class="license-grid">
+            <div class="license-card">
+                <h3><span class="cc-badge"><i class="bi bi-file-earmark-lock"></i> All Rights Reserved</span></h3>
+                <p>The copyright holder retains all rights. Standard copyright protection applies without explicit license.</p>
+            </div>
+
+            <div class="license-card">
+                <h3><span class="cc-badge"><i class="bi bi-check-circle"></i> Permission Granted</span></h3>
+                <p>The copyright holder has explicitly granted permission for archival, preservation, and community sharing.</p>
+            </div>
+
+            <div class="license-card">
+                <h3><span class="cc-badge"><i class="bi bi-book"></i> Custom License</span></h3>
+                <p>Documents may have unique licensing terms created specifically by the copyright holder.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="rights-section">
+        <h2><i class="bi bi-question-circle"></i> Questions About Rights?</h2>
+        <p>
+            If you have questions about the rights or licensing of a specific document, or if you are 
+            a copyright holder and need to update licensing information, please see our 
+            <a href="{% url 'preservation_policy' %}" style="color: var(--accent-color);">Preservation Policy</a> 
+            page for contact information and takedown procedures.
+        </p>
+        <p>
+            We are committed to respecting copyright while preserving these important historical 
+            documents for future generations of the furry community.
+        </p>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,360 @@
+{% extends 'archive/base.html' %}
+
+{% block title %}Preservation Policy - Furry Con Archives{% endblock %}
+
+{% block extra_css %}
+<style>
+    .policy-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+    .policy-header {
+        text-align: center;
+        margin-bottom: 4rem;
+        padding-bottom: 2rem;
+        border-bottom: 2px solid var(--border-color);
+    }
+    .policy-header h1 {
+        font-size: 2.5rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, var(--text-primary), var(--accent-color));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        letter-spacing: -0.5px;
+    }
+    .policy-header h1 i {
+        color: var(--accent-color);
+        font-size: 2.5rem;
+        transition: all 0.3s ease;
+        vertical-align: middle;
+        line-height: 1;
+        transform-origin: center;
+    }
+    .policy-header h1:hover i {
+        transform: rotate(8deg) scale(1.1);
+    }
+    .policy-header p {
+        color: var(--text-secondary);
+        font-size: 1.05rem;
+        font-weight: 500;
+    }
+        /* Icon rotation for section headers */
+        .policy-section h2 i {
+            color: var(--accent-color);
+            font-size: 1.6rem;
+            transition: all 0.3s ease;
+            vertical-align: middle;
+            line-height: 1;
+            transform-origin: center;
+        }
+        .policy-section:hover h2 i {
+            transform: rotate(8deg) scale(1.1);
+        }
+        .policy-section h3 i {
+            color: var(--accent-color);
+            font-size: 1.3rem;
+            transition: all 0.3s ease;
+            vertical-align: middle;
+            line-height: 1;
+            transform-origin: center;
+        }
+        .policy-section:hover h3 i {
+            transform: rotate(8deg) scale(1.1);
+        }
+    .policy-section {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius);
+        padding: 2.5rem;
+        margin-bottom: 2.5rem;
+        box-shadow: var(--shadow);
+        transition: all 0.3s ease;
+    }
+    .policy-section:hover {
+        box-shadow: var(--shadow-hover);
+        border-color: var(--primary-color);
+        transform: translateY(-4px);
+    }
+    .policy-section h2 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid rgba(0, 212, 255, 0.15);
+    }
+    .policy-section h2 i {
+        color: var(--accent-color);
+        font-size: 1.6rem;
+    }
+    .policy-section h3 {
+        margin-bottom: 1rem;
+    }
+    .policy-section p {
+        color: var(--text-secondary);
+        line-height: 1.8;
+        font-size: 0.95rem;
+        margin-bottom: 1.25rem;
+    }
+    .policy-section ul, .policy-section ol {
+        color: var(--text-secondary);
+        line-height: 1.8;
+        margin-left: 1.5rem;
+        margin-bottom: 1.25rem;
+    }
+    .policy-section li {
+        margin-bottom: 0.6rem;
+    }
+    .policy-section a {
+        color: var(--accent-color);
+        text-decoration: none;
+        transition: all 0.3s ease;
+        font-weight: 500;
+    }
+    .policy-section a:hover {
+        color: var(--primary-color);
+        text-decoration: underline;
+    }
+    .highlight-box {
+        background: linear-gradient(135deg, rgba(0, 212, 255, 0.12), rgba(0, 102, 204, 0.08));
+        border-left: 4px solid var(--accent-color);
+        padding: 1.75rem;
+        border-radius: var(--radius-sm);
+        margin: 2rem 0;
+        border-top: 1px solid rgba(0, 212, 255, 0.2);
+        border-right: 1px solid rgba(0, 212, 255, 0.2);
+        border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+    }
+    .highlight-box p {
+        margin: 0;
+        color: var(--text-primary);
+        font-weight: 500;
+        line-height: 1.7;
+    }
+    .contact-methods {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin: 2rem 0;
+    }
+    .contact-button {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+        padding: 0.75rem 1.5rem;
+        border-radius: var(--radius);
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: none;
+        font-size: 0.95rem;
+        color: white;
+    }
+    .contact-button:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-hover);
+        text-decoration: none;
+        color: #fff !important;
+    }
+    .contact-button.telegram {
+        background: linear-gradient(135deg, #0088cc, #0066aa);
+        color: white;
+    }
+    .contact-button.telegram:hover {
+        background: linear-gradient(135deg, #0066aa, #0088cc);
+        box-shadow: 0 8px 20px rgba(0, 136, 204, 0.4);
+    }
+    .contact-button.email {
+        background: linear-gradient(135deg, #dc3545, #c82333);
+        color: white;
+    }
+    .contact-button.email:hover {
+        background: linear-gradient(135deg, #c82333, #dc3545);
+        box-shadow: 0 8px 20px rgba(220, 53, 69, 0.4);
+        color: white;
+    }
+    .contact-button.discord {
+        background: linear-gradient(135deg, #5865F2, #4752C4);
+        color: #fff;
+    }
+    .contact-button.discord:hover {
+        box-shadow: 0 8px 20px rgba(71,82,196,0.35);
+        transform: translateY(-3px);
+    }
+    .contact-button i {
+        font-size: 1.3rem;
+        width: 24px;
+        color: #fff !important;
+    }
+    .contact-button .contact-label {
+        flex: 1;
+    }
+    .contact-button .contact-type {
+        font-size: 0.8rem;
+        opacity: 0.85;
+        font-weight: 500;
+    }
+    @media (max-width: 768px) {
+        .contact-methods {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="policy-container">
+    <div class="policy-header">
+        <h1><i class="bi bi-shield-check"></i> Preservation Policy</h1>
+        <p>Why this archive exists, and how we handle what we collect</p>
+    </div>
+
+    <div class="policy-section">
+        <h2><i class="bi bi-heart"></i> Why This Exists</h2>
+        <p>Some people collect CDs. Some collect video games. Some collect a very specific kind of vintage toy. Those hobbies usually look sane to outsiders because the objects are already framed as valuable.</p>
+        <p>This is ours. Collecting and preserving furry convention materials—especially conbooks—is a special interest. The archive is the public product of that. It is not always easy to explain. To a lot of people it looks obsessive, or weird, or like caring too much about paper that was meant to be disposable. We cannot simply swap it for a more socially acceptable hobby. What we <em>can</em> do is turn that focus into something useful: digitize the material, keep it findable, and stop it from vanishing quietly.</p>
+        <p>These items are printed in low quantities. They get thrown out by attendees who are done with them, discarded by conventions that no longer know what to do with leftover stock, or forgotten in a drawer for twenty years until someone moves and the box goes with the trash. None of that is usually cruelty. Most of the time it is simply that nobody has a plan for the clutter—and by the time someone does, the window has already closed.</p>
+    </div>
+
+    <div class="policy-section">
+        <h2><i class="bi bi-archive"></i> Our Mission</h2>
+        <p>The Furry Con Archives preserves and makes accessible historical documents from the furry fandom. We believe these materials are culturally significant and worth keeping available for people who care about them—now and later.</p>
+        <p>We try to balance preservation with respect for creators, copyright holders, and the community. We do not claim ownership of the materials we host.</p>
+    </div>
+
+    <div class="policy-section">
+        <h2><i class="bi bi-file-earmark-text"></i> What We Archive</h2>
+        <p>We collect and preserve:</p>
+        <ul>
+            <li>Convention booklets, programs, and related materials</li>
+            <li>Newsletters and community publications</li>
+            <li>Historical documents and ephemera</li>
+            <li>Publicly distributed materials from furry conventions and events</li>
+        </ul>
+        <p>We prioritize materials that are publicly distributed, historically meaningful to the fandom, and at real risk of being lost—whether through disposal, neglect, or simple forgetfulness.</p>
+    </div>
+
+    <div class="policy-section">
+        <h2><i class="bi bi-exclamation-triangle"></i> Why These Materials Disappear</h2>
+        <p>Smaller and older conventions often printed only a few hundred copies of a conbook. Survival rates matter. Unlike mass-market books, losing a handful of originals can erase an entire year of that event's paper record.</p>
+        <ul>
+            <li><strong>Thrown out:</strong> Attendees clear shelves. Cons clear leftover inventory. From the outside it looks like clutter; from the inside of this hobby, it is often the last copy anyone will ever see.</li>
+            <li><strong>Forgotten:</strong> Boxes sit in closets, storage units, or volunteer houses for years. Nobody is actively destroying them—they just stop being anyone's problem until a move, a flood, or a leadership change decides for them.</li>
+            <li><strong>Physical wear:</strong> Cheap paper yellows and goes brittle. Staples rust and stain pages. Uncontrolled storage (basements, attics, garages) speeds all of that up. Once the paper is too fragile to handle, digitization gets much harder.</li>
+            <li><strong>Lost digital originals:</strong> Many 2000s-era books were laid out digitally, then the source files vanished with old drives, dead formats, or organizers who moved on. The printed copy someone took home is frequently the only trustworthy record left of how the book actually looked.</li>
+        </ul>
+        <p>We are not claiming conventions are villains. Most are event organizers, not archives. Hosting a weekend is already a huge job. Keeping decades of leftovers forever—without a clear home for them—is something almost nobody is staffed or funded to do. When leftover stock becomes "clutter with no next step," disposal is the default. We exist so there is another option.</p>
+    </div>
+
+    <div class="policy-section">
+        <h2><i class="bi bi-handshake"></i> Donating Materials</h2>
+        <p>If you have conbooks, zines, flyers, leftover convention stock, or a box you inherited and do not know what to do with: we want to hear from you. One copy matters. A whole shelf matters. Condition does not have to be perfect.</p>
+        <ul>
+            <li>Individuals can donate personal collections or single items</li>
+            <li>Conventions can send leftover stock, older inventory, or materials they no longer have room or reason to keep</li>
+            <li>Loan-to-digitize is possible when you want scans but prefer to keep originals</li>
+        </ul>
+        <p>Informal drop-off bins at events rarely work well on their own. Things arrive unlabeled, mixed with random handouts, and then sit until someone figures out the next step—which often never comes. Direct contact is better: we can say what we need, what we already have, and how to get materials here without them vanishing into another unmarked box.</p>
+        <p><a href="{% url 'contact' %}">Contact us</a> and we will work out logistics. Shipping support may be available depending on the situation.</p>
+    </div>
+
+    <div class="policy-section">
+        <h2><i class="bi bi-shield-check"></i> Copyright and Fair Use</h2>
+        <p>We respect intellectual property rights and operate under principles of fair use for educational and preservation purposes. Our archive:</p>
+        <ul>
+            <li>Makes materials available for research and educational purposes</li>
+            <li>Does not claim ownership of archived materials</li>
+            <li>Provides attribution when possible</li>
+            <li>Respects takedown requests from rights holders</li>
+        </ul>
+        <p>If you believe your copyrighted material has been included in the archive without proper authorization, please contact us to request removal.</p>
+    </div>
+
+    <div class="policy-section">
+        <h2><i class="bi bi-exclamation-triangle"></i> Takedown Requests</h2>
+        <p>We take copyright and content concerns seriously. If you are a rights holder and wish to have content removed from the archive, we will process your request promptly.</p>
+        <div class="highlight-box">
+            <p><strong>To submit a takedown request, please contact us:</strong></p>
+        </div>
+        <div class="contact-methods">
+            <a href="mailto:dmca@furryconarchives.org" class="contact-button email">
+                <i class="bi bi-envelope-fill"></i>
+                <div class="contact-label">
+                    <div>dmca@furryconarchives.org</div>
+                    <div class="contact-type">DMCA Email</div>
+                </div>
+            </a>
+        </div>
+        <p style="margin-top: 1.5rem;">When submitting a takedown request, please include:</p>
+        <ul>
+            <li>Your name and contact information</li>
+            <li>Identification of the specific document(s) to be removed</li>
+            <li>Your relationship to the content (author, copyright holder, etc.)</li>
+            <li>Reason for the takedown request</li>
+        </ul>
+        <p>We will review and respond to all legitimate takedown requests within a reasonable timeframe.</p>
+    </div>
+
+    <div class="policy-section">
+        <h2><i class="bi bi-shield-lock"></i> Privacy and Data</h2>
+        <p>We are committed to protecting privacy:</p>
+        <ul>
+            <li>We do not collect personal information beyond what is necessary for archive operations</li>
+            <li>PDF view statistics are anonymized</li>
+            <li>We respect the privacy of document donors and contributors</li>
+            <li>Personal information in archived documents is preserved as-is, but we do not actively collect or index it</li>
+        </ul>
+    </div>
+
+    <div class="policy-section">
+        <h2><i class="bi bi-people"></i> Community Guidelines</h2>
+        <p>The Furry Con Archives is a community resource. We ask users to:</p>
+        <ul>
+            <li>Respect the materials and their creators</li>
+            <li>Use archived materials responsibly</li>
+            <li>Report any concerns or issues</li>
+            <li>Help preserve furry fandom history by contributing when possible</li>
+        </ul>
+    </div>
+
+    <div class="policy-section">
+        <h2><i class="bi bi-envelope"></i> Contact</h2>
+        <p>For questions, concerns, donations, or takedown requests, please contact us:</p>
+        <div class="contact-methods" style="margin-top: 1.5rem;">
+            <a href="https://t.me/furryconarchives" target="_blank" rel="noopener noreferrer" class="contact-button telegram">
+                <i class="bi bi-telegram"></i>
+                <div class="contact-label">
+                    <div>@furryconarchives</div>
+                    <div class="contact-type">Telegram</div>
+                </div>
+            </a>
+            <a href="mailto:info@furryconarchives.org" class="contact-button email">
+                <i class="bi bi-envelope-fill"></i>
+                <div class="contact-label">
+                    <div>info@furryconarchives.org</div>
+                    <div class="contact-type">Contact Email</div>
+                </div>
+            </a>
+            <a href="https://discord.gg/Q9zWSKWVPw" target="_blank" rel="noopener noreferrer" class="contact-button discord">
+                <i class="bi bi-discord"></i>
+                <div class="contact-label">
+                    <div>Join our Discord</div>
+                    <div class="contact-type">Community Chat</div>
+                </div>
+            </a>
+        </div>
+        <p style="margin-top: 1.5rem; color: var(--text-muted); font-size: 0.9rem;">
+            <i class="bi bi-info-circle"></i> For takedown requests, please use the DMCA email above.
+        </p>
+    </div>
+</div>
+{% endblock %}

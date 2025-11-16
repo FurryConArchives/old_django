@@ -1,0 +1,119 @@
+{% extends "archive/base.html" %}
+
+{% block title %}Access Restricted - Furry Con Archives{% endblock %}
+
+{% block extra_css %}
+<style>
+  .takedown-container {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .takedown-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 2px solid var(--border-color);
+  }
+  .takedown-header h1 {
+    font-size: 2.3rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--warning-color), var(--primary-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    letter-spacing: -0.5px;
+  }
+  .takedown-header h1 i {
+    color: var(--warning-color);
+    font-size: 2.3rem;
+    transition: all 0.3s ease;
+  }
+  .takedown-header p {
+    color: var(--text-secondary);
+    font-size: 1.08rem;
+    font-weight: 500;
+  }
+  .takedown-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow);
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    align-items: flex-start;
+  }
+  .takedown-card .takedown-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--warning-color);
+    margin-bottom: 0.7rem;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+  }
+  .takedown-card .takedown-detail {
+    color: var(--text-primary);
+    font-size: 1.08rem;
+    margin-bottom: 0.5rem;
+  }
+  .takedown-card .takedown-explanation {
+    background: var(--bg-tertiary);
+    border-left: 4px solid var(--warning-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-size: 1.05rem;
+    padding: 1.2rem 1.5rem;
+    margin: 0.5rem 0 0.5rem 0;
+    width: 100%;
+    word-break: break-word;
+  }
+  .takedown-card .takedown-contact {
+    color: var(--text-primary);
+    font-size: 1.05rem;
+    margin-bottom: 1.2rem;
+  }
+  .takedown-card .btn {
+    margin-top: 0.5rem;
+    font-size: 1.08rem;
+    border-radius: var(--radius-sm);
+  }
+  @media (max-width: 900px) {
+    .takedown-container { padding: 0 0.5rem; }
+    .takedown-card { padding: 1.2rem; }
+    .takedown-header h1 { font-size: 1.5rem; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="takedown-container">
+  <div class="takedown-header">
+    <h1><i class="bi bi-shield-lock"></i> Access Restricted</h1>
+    <p>This document has been removed from public access in response to a formal takedown request.<br>Access to this material is restricted in accordance with applicable law and/or a legal demand.</p>
+  </div>
+  <div class="takedown-card">
+    <div class="takedown-title"><i class="bi bi-exclamation-triangle-fill"></i> Takedown Notice</div>
+    <div class="takedown-detail">
+      Unauthorized use of proprietary or copyrighted material has been reported for this document.
+      {% if takedown and takedown_explanation %}
+        <div class="takedown-explanation">{{ takedown_explanation|linebreaksbr }}</div>
+      {% endif %}
+    </div>
+    <div class="takedown-contact">
+      If you believe this removal was made in error or wish to contest this action, please contact
+      <a href="mailto:info@furryconarchives.org" style="color: var(--primary-color);">info@furryconarchives.org</a>
+      with relevant details and documentation.
+    </div>
+    <a href="/" class="btn btn-primary">Return to Home</a>
+  </div>
+</div>
+{% endblock %}

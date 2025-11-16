@@ -1,0 +1,45 @@
+<div class="info-section">
+    <h2 class="section-title">
+        <i class="bi bi-info-circle"></i>
+        About this event
+    </h2>
+
+    {% if has_year_event_description %}
+    <div class="convention-description">{{ event_description|linebreaksbr }}</div>
+    {% else %}
+    <div class="convention-description">
+        {% if consurf_event.source == 'mlpcon' %}
+        <p>No description is available for this event yet. If you know the details, please fill out the MLPCON.INFO form below.</p>
+        {% else %}
+        <p>No description is available for this event yet. If you know the details, please submit one via Consurf.</p>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% if consurf_url %}
+    <div class="consurf-actions" style="margin-top: 1.25rem;">
+        {% if consurf_event.source == 'mlpcon' %}
+            {% with mlpcon_slug=consurf_event.name|default:category.name|slugify|cut:"-" %}
+            <a href="https://mlpcon.info/{{ mlpcon_slug }}" target="_blank" rel="noopener noreferrer" class="consurf-button">
+                <img src="https://mlpcon.info/favicon.ico" alt="MLPCON.INFO" class="consurf-favicon">
+                <span>View on MLPCON.INFO</span>
+            </a>
+            {% endwith %}
+        {% else %}
+        <a href="{{ consurf_url }}" target="_blank" rel="noopener noreferrer" class="consurf-button">
+            <img src="https://consurf.net/favicon.ico" alt="Consurf" class="consurf-favicon">
+            <span>View on Consurf</span>
+        </a>
+        {% endif %}
+    </div>
+    <div class="consurf-credit">
+        <span class="consurf-powered-by">Event data powered by
+            {% if consurf_event.source == 'mlpcon' %}
+            <a href="https://mlpcon.info" target="_blank" rel="noopener noreferrer">MLPCON.INFO</a>
+            {% else %}
+            <a href="https://consurf.net" target="_blank" rel="noopener noreferrer">Consurf</a>
+            {% endif %}
+        </span>
+    </div>
+    {% endif %}
+</div>

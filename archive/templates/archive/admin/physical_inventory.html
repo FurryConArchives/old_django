@@ -1,0 +1,353 @@
+{% extends 'archive/admin/base_admin.html' %}
+{% load dict_filters archive_tags %}
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+<style>
+    .donor-selector-group {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+        align-items: flex-end;
+    }
+    #donor-avatars {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+    }
+    #donor-avatars img {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: 2px solid var(--accent-color);
+        object-fit: cover;
+    }
+</style>
+{% endblock %}
+{% block content %}
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem;">
+    <h1 style="margin: 0;">{{ page_title }}</h1>
+    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+        <a href="{% url 'admin_vault_contributors' %}" class="btn btn-secondary">
+            <i class="bi bi-person-badge"></i> Contributor Avatars
+        </a>
+        <button type="button" class="btn btn-success" id="toggle-add-item">
+            <i class="bi bi-plus-circle"></i> Add Physical Item
+        </button>
+    </div>
+</div>
+
+<div id="add-item-form" style="display: none; margin-bottom: 1.5rem; background: var(--bg-secondary); border: 2px solid var(--accent-color); border-radius: 16px; padding: 1.5rem; box-shadow: 0 4px 24px rgba(0,0,0,0.12);">
+    <form method="post" autocomplete="off">
+        {% csrf_token %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+            <div class="form-group">
+                <label for="con">Convention Name</label>
+                <input type="text" name="con" id="con" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="year">Year</label>
+                <input type="number" name="year" id="year" class="form-control" min="1980">
+            </div>
+            <div class="form-group">
+                <label for="item_type">Item Type</label>
+                <input type="text" name="item_type" id="item_type" class="form-control" placeholder="Conbook, Poster, etc.">
+            </div>
+            <div class="form-group">
+                <label for="quantity">Quantity</label>
+                <input type="number" name="quantity" id="quantity" class="form-control" min="1" value="1" required>
+            </div>
+        </div>
+        <div class="form-group" style="margin-top: 1rem;">
+            <label>Donators</label>
+            <div class="donor-selector-group">
+                <div style="display: grid; grid-template-columns: 1fr auto; gap: 0.5rem;">
+                    <input type="text" id="donor-username" class="form-control" placeholder="Telegram username or Discord ID" style="margin-bottom: 0;">
+                    <select id="donor-type" class="form-control" style="flex-shrink: 0; width: auto; margin-bottom: 0;">
+                        <option value="telegram">Telegram</option>
+                        <option value="discord">Discord</option>
+                    </select>
+                </div>
+                <button type="button" id="add-donor-btn" class="btn btn-primary" style="margin-bottom: 0;">Add</button>
+            </div>
+            <div id="donor-avatars"></div>
+            <select id="id_donators" class="form-control" multiple style="display: none;"></select>
+            <input type="hidden" id="donators-hidden" name="donators" value="">
+        </div>
+        <div class="form-group" style="margin-top: 1rem;">
+            <label for="notes">Notes</label>
+            <textarea name="notes" id="notes" class="form-control" rows="2"></textarea>
+        </div>
+        <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
+            <button type="submit" class="btn btn-success">
+                <i class="bi bi-save"></i> Save Item
+            </button>
+            <button type="button" class="btn btn-secondary" id="cancel-add-item">Cancel</button>
+        </div>
+    </form>
+</div>
+
+<div style="width: 100%;">
+    <!-- Search and Filter Bar -->
+    <div style="background: var(--bg-secondary); border: 2px solid var(--accent-color); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 4px 24px rgba(0,0,0,0.12);">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+            <div class="form-group" style="margin: 0;">
+                <label for="search-filter">Search</label>
+                <input type="text" id="search-filter" class="form-control" placeholder="Convention, donor, or notes...">
+            </div>
+            <div class="form-group" style="margin: 0;">
+                <label for="year-filter">Year</label>
+                <input type="number" id="year-filter" class="form-control" placeholder="All years">
+            </div>
+            <div class="form-group" style="margin: 0;">
+                <label for="item-type-filter">Item Type</label>
+                <input type="text" id="item-type-filter" class="form-control" placeholder="All types">
+            </div>
+            <div class="form-group" style="margin: 0; display: flex; flex-direction: column; justify-content: flex-end;">
+                <button type="button" id="reset-filters" class="btn btn-secondary" style="margin-top: auto;">Reset Filters</button>
+            </div>
+        </div>
+        <div style="font-size: 0.9rem; color: var(--text-secondary);">
+            Showing <span id="filtered-count">{{ items.count }}</span> of <span id="total-count">{{ items.count }}</span> items
+        </div>
+    </div>
+
+    <!-- Inventory Table -->
+    <div style="border: 2px solid var(--accent-color); border-radius: 16px; background: var(--bg-secondary); box-shadow: 0 4px 24px rgba(0,0,0,0.12); overflow-x: auto; min-width: 0; width: 100%;">
+        <table class="table table-striped" style="min-width: 700px;">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Convention</th>
+                    <th>Year</th>
+                    <th>Item Type</th>
+                    <th>Quantity</th>
+                    <th>Donators</th>
+                    <th>Notes</th>
+                    <th>Added At</th>
+                    <th>Edit</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>{{ item.id }}</td>
+                    <td>{{ item.con }}</td>
+                    <td>{{ item.year|default:'—' }}</td>
+                    <td>{{ item.item_type }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>
+                        {% if item.donators %}
+                            {% for donor_entry in item.donators|split:"," %}
+                                {% with donor_entry_clean=donor_entry|trim %}
+                                    {% if donor_entry_clean %}
+                                        {% with donor_data=donor_entry_clean|parse_donor_entry %}
+                                            {% vault_contributor_avatar donor_data as avatar_url %}
+                                            {% vault_contributor_display_name donor_data as donor_name %}
+                                            <span style="display: inline-flex; align-items: center; gap: 0.5em; margin-right: 1em;">
+                                                {% if avatar_url %}
+                                                    <img src="{{ avatar_url }}" alt="{{ donor_name }} avatar" title="{{ donor_name }}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid #ccc; background: #eee;">
+                                                {% else %}
+                                                    <span style="display: inline-block; width: 32px; height: 32px; border-radius: 50%; background: #eee; border: 1px solid #ccc; text-align: center; line-height: 32px; font-size: 1.1em; color: #888;">?</span>
+                                                {% endif %}
+                                                <span title="{{ donor_name }}">{{ donor_name }}</span>
+                                            </span>
+                                        {% endwith %}
+                                    {% endif %}
+                                {% endwith %}
+                            {% endfor %}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                    <td>{{ item.notes|default:'—' }}</td>
+                    <td>{{ item.added_at|date:'Y-m-d H:i' }}</td>
+                    <td>
+                        <a href="{% url 'admin_edit_physical_inventory' item.id %}" class="btn btn-primary btn-sm">
+                            <i class="bi bi-pencil"></i> Edit
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="9">No physical inventory items found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+<script>
+    const toggleAddItemBtn = document.getElementById('toggle-add-item');
+    const cancelAddItemBtn = document.getElementById('cancel-add-item');
+    const addItemForm = document.getElementById('add-item-form');
+
+    toggleAddItemBtn.addEventListener('click', () => {
+        addItemForm.style.display = addItemForm.style.display === 'none' ? 'block' : 'none';
+    });
+
+    cancelAddItemBtn.addEventListener('click', () => {
+        addItemForm.style.display = 'none';
+    });
+
+    const donorSelect = new TomSelect('#id_donators', {
+        plugins: ['remove_button'],
+        persist: false,
+        create: false,
+        render: {
+            option: function(data, escape) {
+                return `<div><img src="${escape(data.avatar||'')}" style="width:22px;height:22px;border-radius:50%;margin-right:7px;vertical-align:middle;">${escape(data.text)}</div>`;
+            },
+            item: function(data, escape) {
+                return `<div><img src="${escape(data.avatar||'')}" style="width:18px;height:18px;border-radius:50%;margin-right:5px;vertical-align:middle;">${escape(data.text)}</div>`;
+            }
+        }
+    });
+
+    async function fetchDiscordUser(discordId) {
+        try {
+            const resp = await fetch(`/internal/api/discord-user/${encodeURIComponent(discordId)}`);
+            if (!resp.ok) return null;
+            return await resp.json();
+        } catch { return null; }
+    }
+
+    async function fetchTelegramUser(username) {
+        try {
+            const resp = await fetch(`/internal/api/telegram-user/${encodeURIComponent(username)}`);
+            if (!resp.ok) return null;
+            const data = await resp.json();
+            return data.display_name || null;
+        } catch (e) {
+            console.error('Error fetching telegram user:', e);
+            return null;
+        }
+    }
+
+    function fetchDonorAvatar(type, usernameOrId) {
+        if (!usernameOrId) return '';
+        if (type === 'telegram') {
+            return `/internal/api/telegram-avatar/${encodeURIComponent(usernameOrId)}`;
+        } else if (type === 'discord') {
+            return `/internal/api/discord-avatar/${encodeURIComponent(usernameOrId)}`;
+        }
+        return '';
+    }
+
+    document.getElementById('add-donor-btn').onclick = async function(e) {
+        e.preventDefault();
+        const type = document.getElementById('donor-type').value;
+        let username = document.getElementById('donor-username').value.trim();
+        if (!username) return;
+        let label = '';
+        let avatar = '';
+        if (type === 'telegram') {
+            if (username.startsWith('@')) username = username.slice(1);
+            const displayName = await fetchTelegramUser(username);
+            const cleanDisplayName = displayName || username;
+            label = `Telegram: ${cleanDisplayName} (${username})`;
+            avatar = fetchDonorAvatar(type, username);
+        } else if (type === 'discord') {
+            const userData = await fetchDiscordUser(username);
+            if (userData && userData.username) {
+                const displayName = userData.display_name || userData.username;
+                const discordId = userData.id || username;
+                label = `Discord: ${displayName}||${discordId}`;
+                avatar = fetchDonorAvatar(type, discordId);
+            } else {
+                label = `Discord: ${username}`;
+                avatar = fetchDonorAvatar(type, username);
+            }
+        }
+        donorSelect.addOption({value: label, text: label.split('|')[0], avatar: avatar});
+        donorSelect.addItem(label);
+        const avatarsDiv = document.getElementById('donor-avatars');
+        const img = document.createElement('img');
+        img.src = avatar;
+        img.alt = label;
+        img.style.width = '32px';
+        img.style.height = '32px';
+        img.style.borderRadius = '50%';
+        img.style.border = '2px solid var(--accent-color)';
+        img.style.objectFit = 'cover';
+        avatarsDiv.appendChild(img);
+        document.getElementById('donor-username').value = '';
+    };
+
+    document.querySelector('#add-item-form form').addEventListener('submit', function() {
+        const selected = donorSelect.items;
+        document.getElementById('donators-hidden').value = selected.join(',');
+    });
+
+    // Search and Filter Functionality
+    const searchInput = document.getElementById('search-filter');
+    const yearInput = document.getElementById('year-filter');
+    const itemTypeInput = document.getElementById('item-type-filter');
+    const resetBtn = document.getElementById('reset-filters');
+    const tableRows = Array.from(document.querySelectorAll('table tbody tr'));
+    const totalCount = document.getElementById('total-count');
+    const filteredCount = document.getElementById('filtered-count');
+
+    totalCount.textContent = tableRows.length;
+
+    function applyFilters() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const yearFilter = yearInput.value.trim();
+        const itemTypeFilter = itemTypeInput.value.toLowerCase();
+
+        let visibleCount = 0;
+
+        tableRows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            if (cells.length < 2) return; // Skip empty rows
+
+            const convention = cells[1].textContent.toLowerCase();
+            const year = cells[2].textContent.trim();
+            const itemType = cells[3].textContent.toLowerCase();
+            const quantity = cells[4].textContent;
+            const donators = cells[5].textContent.toLowerCase();
+            const notes = cells[6].textContent.toLowerCase();
+
+            let matches = true;
+
+            // Search filter (searches convention, donators, notes)
+            if (searchTerm) {
+                const searchableText = `${convention} ${donators} ${notes}`;
+                matches = matches && searchableText.includes(searchTerm);
+            }
+
+            // Year filter
+            if (yearFilter && year !== yearFilter) {
+                matches = matches && year.includes(yearFilter);
+            }
+
+            // Item type filter
+            if (itemTypeFilter) {
+                matches = matches && itemType.includes(itemTypeFilter);
+            }
+
+            if (matches) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        filteredCount.textContent = visibleCount;
+    }
+
+    // Event listeners for filtering
+    searchInput.addEventListener('input', applyFilters);
+    yearInput.addEventListener('input', applyFilters);
+    itemTypeInput.addEventListener('input', applyFilters);
+
+    // Reset filters
+    resetBtn.addEventListener('click', function() {
+        searchInput.value = '';
+        yearInput.value = '';
+        itemTypeInput.value = '';
+        applyFilters();
+    });
+</script>
+{% endblock %}

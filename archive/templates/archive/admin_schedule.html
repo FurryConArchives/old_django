@@ -1,0 +1,771 @@
+{% extends "archive/admin/base_admin.html" %}
+{% block title %}Schedule Management{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h2 class="card-title">Schedule Management</h2>
+            <p class="card-subtitle">View and manage cached convention schedules.</p>
+        </div>
+        <button class="btn btn-success" id="add-schedule-btn"><i class="bi bi-plus-circle"></i> Add Schedule</button>
+        <button class="btn btn-info" id="fetch-all-btn" style="margin-left:1rem; display:none;"><i class="bi bi-arrow-repeat"></i> Fetch All</button>
+    </div>
+    <div class="card-body">
+        <table class="table" style="width:100%; background:var(--bg-secondary); color:var(--text-primary);">
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Slug</th>
+                    <th>Category</th>
+                    <th>Year</th>
+                    <th>Convention Name</th>
+                    <th>Last Updated</th>
+                    <th>Events</th>
+                    <th>Error</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="schedule-table-body">
+                <!-- Schedules will be loaded here by JS -->
+            </tbody>
+        </table>
+    </div>
+</div>
+<!-- Modal for adding schedule -->
+<div id="add-schedule-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+  <div style="background:var(--bg-secondary); border-radius:var(--radius); padding:2rem; min-width:350px; max-width:90vw; box-shadow:var(--shadow);">
+    <h3 style="margin-bottom:1rem;">Add New Schedule</h3>
+    <form id="add-schedule-form">
+      <div class="form-group">
+        <label for="schedule-type">Type</label>
+        <select id="schedule-type" name="type" class="form-control" required>
+          <option value="sched">Sched</option>
+          <option value="guidebook">Guidebook</option>
+          <option value="sessionize">Sessionize</option>
+          <option value="pretalx">Pretalx</option>
+          <option value="furconnect">Furconnect</option>
+          <option value="local">Local JSON</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="schedule-slug">Slug</label>
+        <input type="text" id="schedule-slug" name="slug" class="form-control" required placeholder="Convention slug or pretalx URL">
+      </div>
+      <div class="form-group">
+        <label for="schedule-category">Category</label>
+        <select id="schedule-category" name="category" class="form-control" required>
+          <!-- Categories will be loaded by JS -->
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="schedule-year">Year (optional)</label>
+        <input type="number" id="schedule-year" name="year" class="form-control" placeholder="e.g. 2026">
+      </div>
+      <div class="form-group">
+        <label for="schedule-convention">Convention Name (optional)</label>
+        <input type="text" id="schedule-convention" name="convention_name" class="form-control" placeholder="Convention display name">
+      </div>
+      <div class="form-group" id="furconnect-url-group" style="display:none;">
+        <label for="schedule-furconnect-url">Furconnect URL</label>
+        <input type="url" id="schedule-furconnect-url" name="furconnect_url" class="form-control" placeholder="https://events.furlingame.com">
+        <small class="text-muted">Used for the public “View on Furconnect” link.</small>
+      </div>
+      <div class="form-group" id="furconnect-timezone-group" style="display:none;">
+        <label for="schedule-timezone">Timezone</label>
+        <input type="text" id="schedule-timezone" name="timezone" class="form-control" value="America/Los_Angeles" placeholder="America/Los_Angeles">
+      </div>
+      <div class="form-group">
+        <label for="schedule-file">Upload schedule file (optional)</label>
+        <input type="file" id="schedule-file" name="schedule_file" accept=".json,.csv" class="form-control">
+        <small class="text-muted" id="schedule-file-help">Local JSON imports events directly. Furconnect CSV exports are also supported.</small>
+      </div>
+      <div style="display:flex; gap:1rem; margin-top:1.5rem;">
+        <button type="submit" class="btn btn-success">Create</button>
+        <button type="button" class="btn btn-secondary" id="cancel-add-schedule">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+<script>
+// Show modal
+const addBtn = document.getElementById('add-schedule-btn');
+const modal = document.getElementById('add-schedule-modal');
+const cancelBtn = document.getElementById('cancel-add-schedule');
+addBtn.onclick = () => {
+    // Ensure field order reflects selected type when opening
+    reorderAddModalFields(document.getElementById('schedule-type').value);
+    modal.style.display = 'flex';
+  };
+  cancelBtn.onclick = () => { modal.style.display = 'none'; };
+
+  // Helper: simple client-side slugify
+  function clientSlugify(s) {
+    if (!s) return '';
+    return String(s).toLowerCase()
+      .replace(/\.[^/.]+$/, '')          // remove file extension
+      .replace(/[^a-z0-9]+/g, '-')       // non-alnum -> dash
+      .replace(/^-+|-+$/g, '')           // trim leading/trailing dashes
+      .substring(0, 100);
+  }
+
+  function localScheduleMetaFromPayload(parsed) {
+    if (!parsed || Array.isArray(parsed)) return null;
+    const events = parsed.events || parsed.schedule;
+    if (!Array.isArray(events)) return null;
+
+    let slug = String(parsed.slug || '').trim();
+    let year = parsed.year;
+    let convention_name = String(parsed.convention_name || parsed.display_name || '').trim();
+
+    if (year !== undefined && year !== null && year !== '') {
+      year = parseInt(year, 10);
+      if (Number.isNaN(year)) year = null;
+    } else {
+      year = null;
+    }
+
+    if (!slug && convention_name && year) {
+      slug = `${clientSlugify(convention_name)}-${year}`;
+    }
+
+    if (slug && !year) {
+      const match = slug.match(/-(\d{4})$/);
+      if (match) year = parseInt(match[1], 10);
+    }
+
+    if (!convention_name && slug) {
+      const base = slug.replace(/-\d{4}$/, '');
+      const title = base.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      convention_name = year ? `${title} ${year}` : title;
+    }
+
+    return slug ? { slug, year, convention_name } : null;
+  }
+
+  function applyLocalScheduleMetaToForm(parsed, formPrefix) {
+    const meta = localScheduleMetaFromPayload(parsed);
+    if (!meta) return false;
+    const slugInput = document.getElementById(`${formPrefix}-schedule-slug`);
+    const yearInput = document.getElementById(`${formPrefix}-schedule-year`);
+    const conventionInput = document.getElementById(`${formPrefix}-schedule-convention`);
+    if (slugInput) slugInput.value = meta.slug;
+    if (yearInput && meta.year) yearInput.value = meta.year;
+    if (conventionInput && meta.convention_name) conventionInput.value = meta.convention_name;
+    return true;
+  }
+
+  function furconnectMetaFromFilename(filename) {
+    const base = String(filename || '').replace(/[_\s]+schedule\.csv$/i, '').replace(/\.csv$/i, '').trim();
+    if (!base) return null;
+    const yearMatch = base.match(/\b(20\d{2})\b/);
+    const year = yearMatch ? parseInt(yearMatch[1], 10) : null;
+    let conventionName = base.replace(/\b20\d{2}\b/g, '').replace(/[-_]+/g, ' ').trim();
+    conventionName = conventionName.replace(/\s+/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    let slug = base.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    if (year && !slug.endsWith(String(year))) slug = slug ? `${slug}-${year}` : String(year);
+    if (!slug) return null;
+    return {
+      slug,
+      year,
+      convention_name: conventionName && year ? `${conventionName} ${year}` : (conventionName || slug.replace(/-/g, ' ')),
+    };
+  }
+
+  function applyFurconnectMetaToForm(meta, formPrefix) {
+    if (!meta) return false;
+    const slugInput = document.getElementById(`${formPrefix}schedule-slug`);
+    const yearInput = document.getElementById(`${formPrefix}schedule-year`);
+    const conventionInput = document.getElementById(`${formPrefix}schedule-convention`);
+    if (slugInput) slugInput.value = meta.slug;
+    if (yearInput && meta.year) yearInput.value = meta.year;
+    if (conventionInput && meta.convention_name) conventionInput.value = meta.convention_name;
+    const urlInput = document.getElementById(`${formPrefix}schedule-furconnect-url`);
+    if (urlInput && meta.slug && !urlInput.value) {
+      const hostGuess = meta.slug.replace(/-\d{4}$/, '');
+      if (hostGuess) urlInput.value = `https://events.${hostGuess}.com`;
+    }
+    return true;
+  }
+
+  function readScheduleFile(fileInput, onReady) {
+    if (!fileInput || !fileInput.files || !fileInput.files.length) {
+      onReady(null, null, null, null);
+      return;
+    }
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      const text = ev.target.result || '';
+      const lower = (file.name || '').toLowerCase();
+      if (lower.endsWith('.csv')) {
+        onReady(null, null, null, { csvText: text, filename: file.name });
+        return;
+      }
+      try {
+        const parsed = JSON.parse(text);
+        let eventsPayload = '';
+        if (Array.isArray(parsed)) eventsPayload = parsed;
+        else if (parsed.events) eventsPayload = parsed.events;
+        else if (parsed.schedule) eventsPayload = parsed.schedule;
+        else eventsPayload = parsed;
+        onReady(eventsPayload, parsed, null, null);
+      } catch (err) {
+        onReady(null, null, err, null);
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function readLocalScheduleFile(fileInput, onReady) {
+    readScheduleFile(fileInput, (eventsPayload, parsed, err, csvData) => {
+      if (csvData) {
+        onReady(null, null, new Error('Expected JSON schedule file.'));
+        return;
+      }
+      onReady(eventsPayload, parsed, err);
+    });
+  }
+
+  // Reorder Add modal fields and toggle visibility; for Local JSON hide slug and auto-fill from JSON payload
+  function reorderAddModalFields(type) {
+    const form = document.getElementById('add-schedule-form');
+    if (!form) return;
+    const slugDiv = form.querySelector('#schedule-slug')?.closest('.form-group');
+    const fileDiv = form.querySelector('#schedule-file')?.closest('.form-group');
+    const furconnectUrlDiv = document.getElementById('furconnect-url-group');
+    const furconnectTzDiv = document.getElementById('furconnect-timezone-group');
+    if (!slugDiv || !fileDiv || slugDiv === fileDiv) return;
+
+    const slugInput = form.querySelector('#schedule-slug');
+    const fileInput = form.querySelector('#schedule-file');
+    const fileHelp = document.getElementById('schedule-file-help');
+
+    if (type === 'local') {
+      fileDiv.parentNode.insertBefore(fileDiv, slugDiv);
+      fileDiv.style.display = '';
+      if (fileHelp) fileHelp.textContent = 'Selecting a JSON file will import its events and include them in the new schedule.';
+      slugDiv.style.display = 'none';
+      if (furconnectUrlDiv) furconnectUrlDiv.style.display = 'none';
+      if (furconnectTzDiv) furconnectTzDiv.style.display = 'none';
+      if (fileInput) fileInput.accept = '.json';
+      if (!slugInput.value) slugInput.value = `local-${Date.now().toString().slice(-5)}`;
+    } else if (type === 'furconnect') {
+      fileDiv.parentNode.insertBefore(fileDiv, slugDiv);
+      fileDiv.style.display = '';
+      if (fileHelp) fileHelp.textContent = 'Upload a Furconnect CSV export to import events.';
+      slugDiv.style.display = '';
+      if (furconnectUrlDiv) furconnectUrlDiv.style.display = '';
+      if (furconnectTzDiv) furconnectTzDiv.style.display = '';
+      if (fileInput) fileInput.accept = '.csv';
+    } else {
+      slugDiv.parentNode.insertBefore(slugDiv, fileDiv);
+      slugDiv.style.display = '';
+      fileDiv.style.display = 'none';
+      if (furconnectUrlDiv) furconnectUrlDiv.style.display = 'none';
+      if (furconnectTzDiv) furconnectTzDiv.style.display = 'none';
+      if (fileInput) fileInput.accept = '.json,.csv';
+    }
+  }
+
+  // When a file is chosen in the Add modal and type==local, auto-fill slug/year from JSON payload
+  const addFileInput = document.getElementById('schedule-file');
+  if (addFileInput) {
+    addFileInput.addEventListener('change', () => {
+      const type = document.getElementById('schedule-type')?.value;
+      readScheduleFile(addFileInput, (eventsPayload, parsed, err, csvData) => {
+        if (err) {
+          alert('Invalid schedule file: ' + err);
+          return;
+        }
+        if (type === 'furconnect' && csvData) {
+          applyFurconnectMetaToForm(furconnectMetaFromFilename(csvData.filename), '');
+          return;
+        }
+        if (type === 'local') {
+          if (parsed && !applyLocalScheduleMetaToForm(parsed, '')) {
+            alert('Local schedule JSON must include slug (or convention name + year) and events.');
+          }
+        }
+      });
+    });
+  }
+
+  // Wire up dynamic behavior on type change for Add modal
+  const addTypeSelect = document.getElementById('schedule-type');
+  if (addTypeSelect) {
+    addTypeSelect.addEventListener('change', (e) => reorderAddModalFields(e.target.value));
+    // initial ordering + visibility
+    reorderAddModalFields(addTypeSelect.value);
+  }
+// Load categories for dropdown
+fetch("/internal/api/categories", {headers: {"X-Requested-With": "XMLHttpRequest"}})
+  .then(resp => resp.json())
+  .then(data => {
+    const catSelect = document.getElementById('schedule-category');
+    catSelect.innerHTML = '';
+    (data.categories || []).forEach(cat => {
+      const opt = document.createElement('option');
+      opt.value = cat.id;
+      opt.textContent = cat.name;
+      catSelect.appendChild(opt);
+    });
+  });
+// Handle form submit (stub, needs backend endpoint)
+document.getElementById('add-schedule-form').onsubmit = function(e) {
+  e.preventDefault();
+  const type = document.getElementById('schedule-type').value;
+  const slug = document.getElementById('schedule-slug').value;
+  const category = document.getElementById('schedule-category').value;
+  const year = document.getElementById('schedule-year').value || null;
+  const convention_name = document.getElementById('schedule-convention').value || '';
+  const fileInput = document.getElementById('schedule-file');
+
+  function doCreate(eventsJson, schedulePayload, csvText) {
+    const body = {
+      type: type,
+      slug: document.getElementById('schedule-slug').value,
+      category_id: category,
+      year: document.getElementById('schedule-year').value || null,
+      convention_name: document.getElementById('schedule-convention').value || '',
+      events_json: eventsJson || '',
+      furconnect_url: document.getElementById('schedule-furconnect-url')?.value || '',
+      timezone: document.getElementById('schedule-timezone')?.value || 'America/Los_Angeles',
+      schedule_csv: csvText || '',
+    };
+    if (type === 'local' && schedulePayload && !Array.isArray(schedulePayload)) {
+      body.schedule_payload = schedulePayload;
+    }
+    fetch('/internal/api/schedule-create', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      body: JSON.stringify(body)
+    })
+    .then(resp => resp.json())
+    .then(data => {
+      if (data.error) {
+        alert('Error: ' + data.error);
+      } else {
+        alert('Schedule created successfully!');
+        location.reload();
+      }
+    })
+    .catch(err => {
+      alert('Error creating schedule: ' + err);
+    });
+    modal.style.display = 'none';
+  }
+
+  if (fileInput && fileInput.files && fileInput.files.length > 0) {
+    readScheduleFile(fileInput, (eventsPayload, parsed, err, csvData) => {
+      if (err) {
+        alert('Invalid schedule file: ' + err);
+        return;
+      }
+      if (type === 'local') {
+        applyLocalScheduleMetaToForm(parsed, '');
+      } else if (type === 'furconnect' && csvData) {
+        applyFurconnectMetaToForm(furconnectMetaFromFilename(csvData.filename), '');
+        doCreate('', null, csvData.csvText);
+        return;
+      }
+      doCreate(eventsPayload, parsed, '');
+    });
+  } else {
+    if (type === 'furconnect' && !(document.getElementById('schedule-furconnect-url')?.value || '').trim()) {
+      alert('Furconnect schedules require a source URL.');
+      return;
+    }
+    doCreate('');
+  }
+};
+// Load schedules
+let SCHEDULES = [];
+function loadSchedules() {
+  fetch("{% url 'internal_api_schedule_list' %}", {headers: {"X-Requested-With": "XMLHttpRequest"}})
+    .then(resp => resp.json())
+    .then(data => {
+      SCHEDULES = data.schedules || [];
+      const tbody = document.getElementById('schedule-table-body');
+      tbody.innerHTML = '';
+      SCHEDULES.forEach(sched => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${sched.type}</td>
+          <td>${sched.slug}</td>
+          <td>${sched.category_name || '-'}</td>
+          <td>${sched.year || '-'}</td>
+          <td>${sched.convention_name || '-'}</td>
+          <td>${sched.last_updated}</td>
+          <td>${sched.events_count}</td>
+          <td>${sched.error ? sched.error.substring(0, 80) : '-'}</td>
+          <td style="display:flex;gap:0.5em;">
+            <button class="btn btn-small btn-primary" onclick="editSchedule(${sched.id})">Edit</button>
+            <button class="btn btn-small btn-secondary" onclick="uploadJsonToSchedule(${sched.id})">Upload File</button>
+            <button class="btn btn-small btn-danger" onclick="deleteSchedule(${sched.id})">Delete</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    });
+}
+
+function deleteSchedule(scheduleId) {
+  if (!confirm('Are you sure you want to delete this schedule?')) return;
+  fetch('/internal/api/schedule-edit', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest'
+    },
+    body: JSON.stringify({ id: scheduleId, deleted: true })
+  })
+  .then(resp => resp.json())
+  .then(data => {
+    if (data.error) {
+      alert('Error: ' + data.error);
+    } else {
+      alert('Schedule deleted.');
+      loadSchedules();
+    }
+  })
+  .catch(err => alert('Error deleting schedule: ' + err));
+}
+
+function fetchNow(scheduleId) {
+  fetch('/internal/api/schedule-fetch-now', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest'
+    },
+    body: JSON.stringify({ id: scheduleId })
+  })
+  .then(resp => resp.json())
+  .then(data => {
+    if (data.error) {
+      alert('Error: ' + data.error);
+    } else {
+      alert('Schedule fetched!');
+      loadSchedules();
+    }
+  })
+  .catch(err => alert('Error fetching schedule: ' + err));
+}
+
+function uploadJsonToSchedule(scheduleId) {
+  const sched = SCHEDULES.find(s => s.id === scheduleId);
+  const picker = document.createElement('input');
+  picker.type = 'file';
+  picker.accept = sched && sched.type === 'furconnect' ? '.csv' : '.json,.csv';
+  picker.onchange = function() {
+    const f = picker.files[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      const text = ev.target.result || '';
+      const lower = (f.name || '').toLowerCase();
+      if (lower.endsWith('.csv') || (sched && sched.type === 'furconnect')) {
+        fetch('/internal/api/schedule-edit', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
+          body: JSON.stringify({
+            id: scheduleId,
+            schedule_csv: text,
+            timezone: 'America/Los_Angeles',
+          })
+        })
+        .then(r => r.json())
+        .then(data => {
+          if (data.error) alert('Error: ' + data.error);
+          else { alert('Furconnect CSV uploaded.'); loadSchedules(); }
+        }).catch(err => alert('Upload failed: ' + err));
+        return;
+      }
+      try {
+        const parsed = JSON.parse(text);
+        let eventsPayload = '';
+        if (Array.isArray(parsed)) eventsPayload = parsed;
+        else if (parsed.events) eventsPayload = parsed.events;
+        else if (parsed.schedule) eventsPayload = parsed.schedule;
+        else eventsPayload = parsed;
+        fetch('/internal/api/schedule-edit', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
+          body: JSON.stringify({
+            id: scheduleId,
+            events_json: eventsPayload,
+            schedule_payload: Array.isArray(parsed) ? null : parsed,
+          })
+        })
+        .then(r => r.json())
+        .then(data => {
+          if (data.error) alert('Error: ' + data.error);
+          else { alert('Events uploaded.'); loadSchedules(); }
+        }).catch(err => alert('Upload failed: ' + err));
+      } catch (err) { alert('Invalid JSON file: ' + err); }
+    };
+    reader.readAsText(f);
+  };
+  picker.click();
+}
+
+function editSchedule(scheduleId) {
+  // Open a modal for editing schedule (category, year, slug, etc.)
+  const modal = document.createElement('div');
+  modal.style.position = 'fixed';
+  modal.style.top = '0';
+  modal.style.left = '0';
+  modal.style.width = '100vw';
+  modal.style.height = '100vh';
+  modal.style.background = 'rgba(0,0,0,0.5)';
+  modal.style.zIndex = '10000';
+  modal.style.display = 'flex';
+  modal.style.alignItems = 'center';
+  modal.style.justifyContent = 'center';
+  modal.innerHTML = `
+    <div style="background:var(--bg-secondary); border-radius:var(--radius); padding:2rem; min-width:350px; max-width:90vw; box-shadow:var(--shadow);">
+      <h3>Edit Schedule</h3>
+      <form id="edit-schedule-form">
+        <div class="form-group">
+          <label for="edit-schedule-category">Category</label>
+          <select id="edit-schedule-category" name="category" class="form-control" required></select>
+        </div>
+        <div class="form-group">
+          <label for="edit-schedule-year">Year</label>
+          <input type="number" id="edit-schedule-year" name="year" class="form-control" required placeholder="Year">
+        </div>
+        <div class="form-group">
+          <label for="edit-schedule-convention">Convention Name</label>
+          <input type="text" id="edit-schedule-convention" name="convention_name" class="form-control" placeholder="Convention display name">
+        </div>
+        <div class="form-group">
+          <label for="edit-schedule-type">Type</label>
+          <select id="edit-schedule-type" name="type" class="form-control">
+            <option value="sched">Sched</option>
+            <option value="guidebook">Guidebook</option>
+            <option value="sessionize">Sessionize</option>
+            <option value="pretalx">Pretalx</option>
+            <option value="furconnect">Furconnect</option>
+            <option value="local">Local JSON</option>
+          </select>
+        </div>
+        <div class="form-group" id="edit-furconnect-url-group" style="display:none;">
+          <label for="edit-schedule-furconnect-url">Furconnect URL</label>
+          <input type="url" id="edit-schedule-furconnect-url" name="furconnect_url" class="form-control" placeholder="https://events.furlingame.com">
+        </div>
+        <div class="form-group" id="edit-furconnect-timezone-group" style="display:none;">
+          <label for="edit-schedule-timezone">Timezone</label>
+          <input type="text" id="edit-schedule-timezone" name="timezone" class="form-control" value="America/Los_Angeles">
+        </div>
+        <div class="form-group">
+          <label for="edit-schedule-slug">Route Slug</label>
+          <input type="text" id="edit-schedule-slug" name="slug" class="form-control" required placeholder="furlingame-2026">
+        </div>
+        <div class="form-group">
+          <label for="edit-schedule-file">Upload/Replace schedule file (optional)</label>
+          <input type="file" id="edit-schedule-file" name="schedule_file" accept=".json,.csv" class="form-control">
+          <small class="text-muted">JSON for local schedules, CSV for Furconnect exports.</small>
+        </div>
+        <div style="display:flex; gap:1rem; margin-top:1.5rem;">
+          <button type="submit" class="btn btn-primary">Save</button>
+          <button type="button" class="btn btn-secondary" onclick="document.body.removeChild(this.parentNode.parentNode.parentNode)">Cancel</button>
+        </div>
+      </form>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  // Load categories for dropdown
+  fetch("/internal/api/categories", {headers: {"X-Requested-With": "XMLHttpRequest"}})
+    .then(resp => resp.json())
+    .then(data => {
+      const catSelect = modal.querySelector('#edit-schedule-category');
+      catSelect.innerHTML = '';
+      (data.categories || []).forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat.id;
+        opt.textContent = cat.name;
+        catSelect.appendChild(opt);
+      });
+    });
+  // Optionally, load schedule details via AJAX and prefill fields
+  // For now, just prefill with empty values
+  // TODO: Implement backend endpoint for schedule detail and update
+    // Prefill fields from cached SCHEDULES if available
+    const sched = SCHEDULES.find(s => s.id === scheduleId);
+    if (sched) {
+      // wait for categories to load then set selected value
+      setTimeout(() => {
+        const sel = modal.querySelector('#edit-schedule-category');
+        if (sel) sel.value = sched.category_id || '';
+      }, 200);
+      modal.querySelector('#edit-schedule-year').value = sched.year || '';
+      modal.querySelector('#edit-schedule-slug').value = sched.route_slug || sched.slug || '';
+      modal.querySelector('#edit-schedule-convention').value = sched.convention_name || '';
+      const typeSel = modal.querySelector('#edit-schedule-type'); if (typeSel) typeSel.value = sched.type || 'sched';
+      const furconnectUrlInput = modal.querySelector('#edit-schedule-furconnect-url');
+      if (furconnectUrlInput) furconnectUrlInput.value = sched.furconnect_url || '';
+      function reorderEditModalFields(modalNode, type) {
+        const slugDiv = modalNode.querySelector('#edit-schedule-slug')?.closest('.form-group');
+        const fileDiv = modalNode.querySelector('#edit-schedule-file')?.closest('.form-group');
+        const furconnectUrlDiv = modalNode.querySelector('#edit-furconnect-url-group');
+        const furconnectTzDiv = modalNode.querySelector('#edit-furconnect-timezone-group');
+        if (!slugDiv || !fileDiv || slugDiv === fileDiv) return;
+        const slugInput = modalNode.querySelector('#edit-schedule-slug');
+        const fileInput = modalNode.querySelector('#edit-schedule-file');
+        if (type === 'local') {
+          fileDiv.parentNode.insertBefore(fileDiv, slugDiv);
+          fileDiv.style.display = '';
+          slugDiv.style.display = 'none';
+          if (furconnectUrlDiv) furconnectUrlDiv.style.display = 'none';
+          if (furconnectTzDiv) furconnectTzDiv.style.display = 'none';
+          if (fileInput) fileInput.accept = '.json';
+          if (!slugInput.value) slugInput.value = `local-${Date.now().toString().slice(-5)}`;
+        } else if (type === 'furconnect') {
+          fileDiv.parentNode.insertBefore(fileDiv, slugDiv);
+          fileDiv.style.display = '';
+          slugDiv.style.display = '';
+          if (furconnectUrlDiv) furconnectUrlDiv.style.display = '';
+          if (furconnectTzDiv) furconnectTzDiv.style.display = '';
+          if (fileInput) fileInput.accept = '.csv';
+        } else {
+          slugDiv.parentNode.insertBefore(slugDiv, fileDiv);
+          slugDiv.style.display = '';
+          fileDiv.style.display = 'none';
+          if (furconnectUrlDiv) furconnectUrlDiv.style.display = 'none';
+          if (furconnectTzDiv) furconnectTzDiv.style.display = 'none';
+        }
+      }
+      reorderEditModalFields(modal, (typeSel && typeSel.value) || 'sched');
+      if (typeSel) typeSel.addEventListener('change', (ev) => reorderEditModalFields(modal, ev.target.value));
+
+      const editFileInput = modal.querySelector('#edit-schedule-file');
+      if (editFileInput) {
+        editFileInput.addEventListener('change', () => {
+          const typeVal = modal.querySelector('#edit-schedule-type')?.value;
+          readScheduleFile(editFileInput, (eventsPayload, parsed, err, csvData) => {
+            if (err) {
+              alert('Invalid schedule file: ' + err);
+              return;
+            }
+            if (typeVal === 'furconnect' && csvData) {
+              applyFurconnectMetaToForm(furconnectMetaFromFilename(csvData.filename), 'edit-');
+              return;
+            }
+            if (typeVal === 'local' && parsed && !applyLocalScheduleMetaToForm(parsed, 'edit')) {
+              alert('Local schedule JSON must include slug (or convention name + year) and events.');
+            }
+          });
+        });
+      }
+      // add convention name field if present
+      const convLabel = document.createElement('div');
+      convLabel.style.marginTop = '0.5rem';
+      convLabel.innerHTML = `<strong>Convention:</strong> ${sched.convention_name || '-'} <br><strong>Type:</strong> ${sched.type} &nbsp; <strong>Events:</strong> ${sched.events_count || 0} <br><strong>Last Updated:</strong> ${sched.last_updated || '-'} <br><strong>Error:</strong> ${sched.error ? sched.error.substring(0,200) : '-'} `;
+      modal.querySelector('form').insertBefore(convLabel, modal.querySelector('form').children[0]);
+    }
+  modal.querySelector('#edit-schedule-form').onsubmit = function(e) {
+    e.preventDefault();
+    const category = modal.querySelector('#edit-schedule-category').value;
+    const year = modal.querySelector('#edit-schedule-year').value;
+    const slug = modal.querySelector('#edit-schedule-slug').value;
+    const convention_name = modal.querySelector('#edit-schedule-convention').value;
+    const type = modal.querySelector('#edit-schedule-type').value;
+    const fileInput = modal.querySelector('#edit-schedule-file');
+
+    function doEdit(eventsPayload, schedulePayload, csvText) {
+      const payload = {
+        id: scheduleId,
+        category_id: modal.querySelector('#edit-schedule-category').value,
+        year: modal.querySelector('#edit-schedule-year').value,
+        slug: modal.querySelector('#edit-schedule-slug').value,
+        convention_name: modal.querySelector('#edit-schedule-convention').value,
+        type: modal.querySelector('#edit-schedule-type').value,
+        furconnect_url: modal.querySelector('#edit-schedule-furconnect-url')?.value || '',
+        timezone: modal.querySelector('#edit-schedule-timezone')?.value || 'America/Los_Angeles',
+        schedule_csv: csvText || '',
+      };
+      if (typeof eventsPayload !== 'undefined') payload.events_json = eventsPayload;
+      if (payload.type === 'local' && schedulePayload && !Array.isArray(schedulePayload)) {
+        payload.schedule_payload = schedulePayload;
+      }
+
+      fetch('/internal/api/schedule-edit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify(payload)
+      })
+      .then(resp => resp.json())
+      .then(data => {
+        if (data.error) {
+          alert('Error: ' + data.error);
+        } else {
+          alert('Schedule updated successfully!');
+          loadSchedules();
+        }
+        document.body.removeChild(modal);
+      })
+      .catch(err => {
+        alert('Error updating schedule: ' + err);
+        document.body.removeChild(modal);
+      });
+    }
+
+    if (fileInput && fileInput.files && fileInput.files.length > 0) {
+      readScheduleFile(fileInput, (eventsPayload, parsed, err, csvData) => {
+        if (err) {
+          alert('Invalid schedule file: ' + err);
+          return;
+        }
+        if (modal.querySelector('#edit-schedule-type').value === 'local') {
+          applyLocalScheduleMetaToForm(parsed, 'edit');
+        } else if (modal.querySelector('#edit-schedule-type').value === 'furconnect' && csvData) {
+          applyFurconnectMetaToForm(furconnectMetaFromFilename(csvData.filename), 'edit-');
+          doEdit(undefined, null, csvData.csvText);
+          return;
+        }
+        doEdit(eventsPayload, parsed, '');
+      });
+    } else {
+      doEdit(undefined, null, '');
+    }
+  };
+}
+
+// Replace previous schedule loading with new function
+loadSchedules();
+</script>
+<script>
+// Fetch All Schedules button handler
+const fetchAllBtn = document.getElementById('fetch-all-btn');
+if (fetchAllBtn) {
+  fetchAllBtn.onclick = function() {
+    if (!confirm('Fetch all schedules now?')) return;
+    fetch('/internal/api/schedule-fetch-all', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+    .then(resp => resp.json())
+    .then(data => {
+      if (data.error) {
+        alert('Error: ' + data.error);
+      } else {
+        alert('All schedules fetched!');
+        loadSchedules();
+      }
+    })
+    .catch(err => alert('Error fetching all schedules: ' + err));
+  };
+}
+</script>
+{% endblock %}
+
+

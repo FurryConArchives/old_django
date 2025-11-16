@@ -1,0 +1,20 @@
+{% extends 'archive/admin/base_admin.html' %}
+
+{% block title %}Delete FAQ - Admin{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 600px; margin: 0 auto;">
+    <div style="text-align: center; margin-bottom: 1.5rem;">
+        <div style="font-size: 3rem; color: var(--error-color);"><i class="bi bi-exclamation-triangle"></i></div>
+        <h3 style="color: var(--error-color); margin-top: 1rem;">Delete this FAQ?</h3>
+    </div>
+    <p style="margin-bottom: 1.5rem; text-align: center; color: var(--text-secondary);">
+        “<strong style="color: var(--text-primary);">{{ entry.question }}</strong>” will be removed from the website and the app.
+    </p>
+    <form method="post" style="display: flex; gap: 1rem; justify-content: center;">
+        {% csrf_token %}
+        <a href="{% url 'admin_faq' %}" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-danger"><i class="bi bi-trash"></i> Delete</button>
+    </form>
+</div>
+{% endblock %}

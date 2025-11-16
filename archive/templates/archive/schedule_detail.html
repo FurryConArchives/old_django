@@ -1,0 +1,1057 @@
+{% extends 'archive/base.html' %}
+
+{% block title %}{{ title }} Schedule - Furry Con Archives{% endblock %}
+
+{% block extra_css %}
+<style>
+    .schedule-shell {
+        color: var(--text-primary);
+        background: transparent;
+        padding: 0;
+    }
+
+    .schedule-hero {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 1.5rem;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.25rem;
+    }
+
+    @media (max-width: 720px) {
+        .schedule-hero {
+            flex-wrap: wrap;
+        }
+    }
+
+    .schedule-kicker {
+        text-transform: uppercase;
+        letter-spacing: 0.22em;
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        margin-bottom: 0.35rem;
+    }
+
+    .schedule-hero h1 {
+        font-size: 2.1rem;
+        font-weight: 700;
+        margin: 0 0 0.35rem;
+    }
+
+    .schedule-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        align-items: center;
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+    }
+
+    .schedule-actions {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+    }
+
+    .schedule-divider {
+        height: 1px;
+        background: var(--border-color);
+        margin: 1rem 0 1.5rem;
+        opacity: 0.8;
+    }
+
+    .schedule-toolbar {
+        display: grid;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .schedule-filters {
+        display: grid;
+        gap: 0.75rem;
+        grid-template-columns: minmax(240px, 1fr) minmax(200px, 260px);
+        align-items: center;
+        padding: 0.75rem;
+        border-radius: var(--radius);
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow);
+    }
+
+    .schedule-tabs {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        padding: 0.6rem 0.75rem;
+        border-radius: var(--radius);
+        border: 1px solid var(--border-color);
+        background: var(--bg-secondary);
+        box-shadow: var(--shadow);
+        align-items: center;
+    }
+
+    .schedule-tab {
+        border: 1px solid var(--border-color);
+        background: var(--bg-tertiary);
+        color: var(--text-secondary);
+        padding: 0.45rem 0.85rem;
+        border-radius: var(--radius-sm);
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .schedule-tab-count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 1.25rem;
+        padding: 0 0.4rem;
+        height: 1.2rem;
+        border-radius: 999px;
+        background: rgba(0, 0, 0, 0.4);
+        color: var(--text-secondary);
+        font-size: 0.7rem;
+        font-weight: 700;
+        border: 1px solid var(--border-color);
+    }
+
+    .schedule-tab.is-active .schedule-tab-count {
+        color: var(--text-primary);
+        border-color: var(--accent-color);
+        background: rgba(0, 212, 255, 0.2);
+    }
+
+    .schedule-tab.is-active {
+        background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(0, 102, 204, 0.2));
+        color: var(--text-primary);
+        border-color: var(--accent-color);
+        box-shadow: var(--shadow);
+    }
+
+    .schedule-search {
+        flex: 1;
+        min-width: 240px;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.65rem 0.85rem;
+        border-radius: var(--radius-sm);
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+    }
+
+    .schedule-search i {
+        color: var(--accent-color);
+    }
+
+    .schedule-search input {
+        flex: 1;
+        background: transparent;
+        border: none;
+        color: var(--text-primary);
+        font-size: 0.95rem;
+        outline: none;
+    }
+
+    .schedule-search input::placeholder {
+        color: var(--text-muted);
+    }
+
+    .schedule-select {
+        width: 100%;
+        padding: 0.6rem 0.75rem;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border-color);
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+        font-size: 0.9rem;
+        appearance: none;
+    }
+
+    .schedule-select option {
+        background: #151515;
+        color: var(--text-primary);
+    }
+
+    .schedule-meta span {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+    .schedule-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.45rem 0.85rem;
+        border-radius: var(--radius-sm);
+        background: var(--bg-tertiary);
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: 0.85rem;
+        line-height: 1;
+        text-decoration: none;
+        box-shadow: none;
+        border: 1px solid var(--border-color);
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+
+    .schedule-link.secondary {
+        background: var(--bg-tertiary);
+        color: var(--text-secondary);
+        border: 1px solid var(--border-color);
+        box-shadow: none;
+    }
+
+    .schedule-link.secondary:hover {
+        border-color: var(--accent-color);
+        color: var(--text-primary);
+        transform: translateY(-1px);
+    }
+
+    .schedule-link:hover {
+        color: var(--text-primary);
+        transform: translateY(-1px);
+        border-color: var(--accent-color);
+        box-shadow: var(--shadow);
+    }
+
+    .schedule-link:focus-visible {
+        outline: 2px solid rgba(0, 212, 255, 0.6);
+        outline-offset: 2px;
+    }
+
+    .schedule-badge {
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+        padding: 0.55rem 0.9rem;
+        border-radius: var(--radius-sm);
+        font-weight: 700;
+        font-size: 0.9rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .schedule-error {
+        padding: 1.5rem;
+        border-radius: 14px;
+        background: rgba(204, 51, 0, 0.2);
+        color: #ffb199;
+        font-weight: 600;
+        box-shadow: 0 12px 24px rgba(204, 51, 0, 0.25);
+        border: 1px solid rgba(204, 51, 0, 0.4);
+    }
+
+    .schedule-day {
+        margin-bottom: 2.25rem;
+    }
+
+    .schedule-day-header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius);
+        background: var(--bg-secondary);
+        box-shadow: var(--shadow);
+    }
+
+    .schedule-day-header h2 {
+        font-size: 1.5rem;
+        margin: 0;
+    }
+
+    .schedule-day-header span {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--text-muted);
+    }
+
+    .schedule-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .schedule-card {
+        background: var(--bg-secondary);
+        border-radius: var(--radius);
+        padding: 1.25rem;
+        box-shadow: var(--shadow);
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        border: 1px solid var(--border-color);
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        width: 100%;
+    }
+
+    .schedule-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-hover);
+        border-color: var(--primary-color);
+    }
+
+    .schedule-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: linear-gradient(90deg, var(--accent-color) 0%, var(--primary-color) 70%);
+    }
+
+    .schedule-card-title {
+        font-size: 1.05rem;
+        font-weight: 700;
+        margin: 0;
+        color: var(--text-primary);
+    }
+
+    .schedule-card-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+    }
+
+    .schedule-card-meta span {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        background: var(--bg-tertiary);
+        padding: 0.3rem 0.6rem;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border-color);
+    }
+
+    .schedule-card-description {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        line-height: 1.5;
+    }
+
+    .schedule-card-actions {
+        margin-top: auto;
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .schedule-card-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-weight: 700;
+        font-size: 0.85rem;
+        color: var(--text-primary);
+        text-decoration: none;
+        background: var(--bg-tertiary);
+        padding: 0.35rem 0.75rem;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border-color);
+        cursor: pointer;
+    }
+
+    .schedule-card-link:hover {
+        background: rgba(0, 212, 255, 0.2);
+        color: var(--text-primary);
+        border-color: var(--accent-color);
+    }
+
+    .schedule-empty {
+        text-align: center;
+        font-weight: 600;
+        color: var(--text-muted);
+        padding: 2rem 1rem;
+        background: var(--bg-secondary);
+        border-radius: var(--radius);
+        border: 1px dashed var(--border-color);
+    }
+
+    .schedule-modal {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 2000;
+    }
+
+    .schedule-modal.is-open {
+        display: flex;
+    }
+
+    .schedule-modal-card {
+        width: min(720px, 100%);
+        background: #171717;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6);
+        overflow: hidden;
+    }
+
+    .schedule-modal-header {
+        padding: 1.25rem 1.5rem 0.75rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        display: flex;
+        align-items: start;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .schedule-modal-title {
+        margin: 0;
+        font-size: 1.25rem;
+        color: var(--text-primary);
+    }
+
+    .schedule-modal-close {
+        background: transparent;
+        border: none;
+        color: var(--text-muted);
+        font-size: 1.25rem;
+        cursor: pointer;
+    }
+
+    .schedule-modal-body {
+        padding: 1rem 1.5rem 1.5rem;
+        color: var(--text-secondary);
+        display: grid;
+        gap: 0.75rem;
+    }
+
+    .schedule-modal-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+    }
+
+    .schedule-modal-meta span {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        background: rgba(255, 255, 255, 0.06);
+        padding: 0.3rem 0.6rem;
+        border-radius: 999px;
+    }
+
+    .schedule-modal-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .schedule-modal-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.45rem 0.85rem;
+        border-radius: 999px;
+        background: rgba(0, 212, 255, 0.2);
+        color: var(--text-primary);
+        text-decoration: none;
+        font-weight: 700;
+    }
+
+    @media (max-width: 720px) {
+        .schedule-hero h1 {
+            font-size: 1.9rem;
+        }
+
+        .schedule-filters {
+            grid-template-columns: 1fr;
+        }
+
+        .schedule-tabs {
+            overflow-x: auto;
+            flex-wrap: nowrap;
+        }
+
+        .schedule-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="schedule-shell" data-source-url="{{ source_url|default:'' }}"
+    data-source-type="{{ source_type|default:'' }}">
+    <div class="schedule-hero">
+        <div>
+            <div class="schedule-kicker">Convention schedule</div>
+            <h1>{{ title }}</h1>
+            <div class="schedule-meta">
+                <span><i class="bi bi-calendar3"></i>{{ events_count }} events</span>
+                {% if timezone_label %}
+                <span><i class="bi bi-clock"></i>{{ timezone_label }}</span>
+                {% endif %}
+                <div class="schedule-actions">
+                    {% if source_type != 'local' %}
+                    <a class="schedule-link" href="{{ source_url }}" target="_blank" rel="noopener">
+                        <i class="bi bi-box-arrow-up-right"></i>
+                        {% if source_type == 'guidebook' %}
+                        View on Guidebook
+                        {% elif source_type == 'sessionize' %}
+                        View on Sessionize
+                        {% elif source_type == 'pretalx' %}
+                        View on Pretalx
+                        {% elif source_type == 'furconnect' %}
+                        View on FurConnect
+                        {% elif source_type == 'sched' %}
+                        View on Sched
+                        {% endif %}
+                    </a>
+                    {% endif %}
+                    <a class="schedule-link secondary" id="schedule-print-link" href="{% url 'schedule_print' slug %}" target="_blank" rel="noopener">
+                        <i class="bi bi-printer"></i>Print schedule
+                    </a>
+                    <button class="schedule-link" id="async-export-btn" type="button"
+                        title="Generate XLSX in background">
+                        <i class="bi bi-file-earmark-spreadsheet"></i>Download Sheet
+                    </button>
+                    <a class="schedule-link view-grid-link" href="{% url 'schedule_view' slug %}?view=grid" title="Open grid view">
+                        <i class="bi bi-grid-3x3-gap-fill"></i>
+                        Grid view
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="schedule-divider"></div>
+
+    <div class="schedule-toolbar">
+        <div class="schedule-filters">
+            <label class="schedule-search" for="schedule-search-input">
+                <i class="bi bi-search"></i>
+                <input id="schedule-search-input" type="search" placeholder="Search events, rooms, or descriptions"
+                    autocomplete="off">
+            </label>
+            <select id="schedule-room-filter" class="schedule-select" aria-label="Filter by room">
+                <option value="">All Rooms</option>
+            </select>
+        </div>
+        <div class="schedule-tabs" id="schedule-day-tabs" role="tablist" aria-label="Schedule days">
+            <button class="schedule-tab is-active" type="button" data-day-filter="">All Days</button>
+            {% if days %}
+            {% for day in days %}
+            <button class="schedule-tab" type="button" data-day-filter="{{ day.label|escape }}">
+                {{ day.short_label|default:day.label }}
+                <span class="schedule-tab-count">{{ day.events|length }}</span>
+            </button>
+            {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+
+    {% if error_message %}
+    <div class="schedule-error">{{ error_message }}</div>
+    {% else %}
+    {% if days %}
+    {% for day in days %}
+    <section class="schedule-day" data-day="{{ day.label|escape }}">
+        <div class="schedule-day-header">
+            <h2>{{ day.label }}</h2>
+            <span>{{ day.events|length }} events</span>
+        </div>
+        <div class="schedule-grid">
+            {% for event in day.events %}
+            <article class="schedule-card" data-event-name="{{ event.name|escape }}"
+                data-event-location="{{ event.location|escape }}"
+                data-event-organizer="{{ event.organizer|default:''|escape }}"
+                data-event-description="{{ event.description|escape }}" data-event-time="{{ event.time_range|escape }}"
+                data-event-day="{{ day.label|escape }}"
+                data-event-url="{% if source_type == 'guidebook' and event.id %}https://builder.guidebook.com/g/#/guides/{{ api_slug|urlencode }}/schedule/sessions/{{ event.id|urlencode }}{% else %}{{ event.sched_url|default:''|escape }}{% endif %}"
+                data-schedule-source="{{ source_type|default:'' }}">
+                <h3 class="schedule-card-title">{{ event.name }}</h3>
+                <div class="schedule-card-meta">
+                    {% if event.time_range %}
+                    <span><i class="bi bi-clock"></i>{{ event.time_range }}</span>
+                    {% endif %}
+                    {% if event.location %}
+                    <span><i class="bi bi-geo-alt"></i>{{ event.location }}</span>
+                    {% endif %}
+                    {% if event.organizer %}
+                    <span><i class="bi bi-person"></i>{{ event.organizer }}</span>
+                    {% endif %}
+                </div>
+                {% if event.description %}
+                <div class="schedule-card-description">{{ event.description }}</div>
+                {% endif %}
+                <div class="schedule-card-actions">
+                    <button class="schedule-card-link schedule-open-modal" type="button">
+                        <i class="bi bi-arrow-up-right"></i>Open event
+                    </button>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+    </section>
+    {% endfor %}
+    {% else %}
+    <div class="schedule-empty">No events found for this schedule yet.</div>
+    {% endif %}
+    {% endif %}
+</div>
+
+<div class="schedule-modal" id="export-modal" aria-hidden="true">
+    <div class="schedule-modal-card" role="dialog" aria-modal="true" aria-labelledby="export-modal-title">
+        <div class="schedule-modal-header">
+            <h2 class="schedule-modal-title" id="export-modal-title">Export progress</h2>
+            <button class="schedule-modal-close" type="button" id="export-modal-close" aria-label="Close">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="schedule-modal-body">
+            <div style="display:flex; align-items:center; gap:0.75rem;">
+                <strong>Export</strong>
+                <span id="export-status-msg" style="color:var(--text-secondary);"></span>
+            </div>
+            <div style="margin-top:0.5rem; background:#222; height:14px; border-radius:8px; overflow:hidden;">
+                <div id="export-progress-bar"
+                    style="height:100%; width:0%; background:linear-gradient(90deg,#00d4ff,#0066cc); transition: width 700ms ease; will-change: width;">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="schedule-modal" id="schedule-modal" aria-hidden="true">
+    <div class="schedule-modal-card" role="dialog" aria-modal="true" aria-labelledby="schedule-modal-title">
+        <div class="schedule-modal-header">
+            <h2 class="schedule-modal-title" id="schedule-modal-title"></h2>
+            <button class="schedule-modal-close" type="button" aria-label="Close">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="schedule-modal-body">
+            <div class="schedule-modal-meta" id="schedule-modal-meta"></div>
+            <div id="schedule-modal-description"></div>
+            <div class="schedule-modal-actions" id="schedule-modal-actions"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        const searchInput = document.getElementById('schedule-search-input');
+        const cards = Array.from(document.querySelectorAll('.schedule-card'));
+        const daySections = Array.from(document.querySelectorAll('.schedule-day'));
+        const dayTabs = Array.from(document.querySelectorAll('.schedule-tab'));
+        const roomFilter = document.getElementById('schedule-room-filter');
+        const printLink = document.getElementById('schedule-print-link');
+        const modal = document.getElementById('schedule-modal');
+        const modalTitle = document.getElementById('schedule-modal-title');
+        const modalMeta = document.getElementById('schedule-modal-meta');
+        const modalDescription = document.getElementById('schedule-modal-description');
+        const modalActions = document.getElementById('schedule-modal-actions');
+        const modalClose = modal.querySelector('.schedule-modal-close');
+
+        let activeDay = '';
+
+        function normalize(text) {
+            return (text || '').toLowerCase().trim();
+        }
+
+        function populateRooms() {
+            const rooms = new Set();
+            cards.forEach(card => {
+                const location = (card.dataset.eventLocation || '').trim();
+                if (location) {
+                    rooms.add(location);
+                }
+            });
+            const sorted = Array.from(rooms).sort((a, b) => a.localeCompare(b));
+            sorted.forEach(room => {
+                const option = document.createElement('option');
+                option.value = room;
+                option.textContent = room;
+                roomFilter.appendChild(option);
+            });
+        }
+
+        function cardMatches(card, query, selectedRoom, dayFilter) {
+            const haystack = normalize([
+                card.dataset.eventName,
+                card.dataset.eventLocation,
+                card.dataset.eventDescription,
+                card.dataset.eventTime,
+                card.dataset.eventDay
+            ].join(' '));
+            const matchesQuery = !query || haystack.includes(query);
+            const matchesRoom = !selectedRoom || normalize(card.dataset.eventLocation) === selectedRoom;
+            const matchesDay = !dayFilter || normalize(card.dataset.eventDay) === normalize(dayFilter);
+            return matchesQuery && matchesRoom && matchesDay;
+        }
+
+        function updateTabs(query, selectedRoom) {
+            let activeDayHasMatches = false;
+            dayTabs.forEach(tab => {
+                const dayFilter = tab.dataset.dayFilter || '';
+                if (!dayFilter) {
+                    tab.style.display = '';
+                    return;
+                }
+
+                const count = cards.filter(card => cardMatches(card, query, selectedRoom, dayFilter))
+                .length;
+                const countBadge = tab.querySelector('.schedule-tab-count');
+                if (countBadge) {
+                    countBadge.textContent = String(count);
+                }
+                tab.style.display = count > 0 ? '' : 'none';
+                if (dayFilter === activeDay && count > 0) {
+                    activeDayHasMatches = true;
+                }
+            });
+
+            if (activeDay && !activeDayHasMatches) {
+                setActiveDay('');
+            }
+        }
+
+        function updateSearch() {
+            const query = normalize(searchInput.value);
+            const selectedRoom = normalize(roomFilter.value);
+
+            updateTabs(query, selectedRoom);
+
+            cards.forEach(card => {
+                const show = cardMatches(card, query, selectedRoom, activeDay);
+                card.style.display = show ? '' : 'none';
+            });
+
+            daySections.forEach(section => {
+                const dayLabel = section.dataset.day || '';
+                const matchesDay = !activeDay || normalize(dayLabel) === normalize(activeDay);
+                const visibleCards = cards.filter(card => {
+                    return normalize(card.dataset.eventDay) === normalize(dayLabel) &&
+                        cardMatches(card, query, selectedRoom, dayLabel);
+                });
+                section.style.display = matchesDay && visibleCards.length ? '' : 'none';
+            });
+        }
+
+        function updatePrintLink() {
+            if (!printLink) {
+                return;
+            }
+            const baseUrl = printLink.getAttribute('href').split('?')[0];
+            const params = new URLSearchParams();
+            if (activeDay) {
+                params.set('day', activeDay);
+            }
+            const roomValue = (roomFilter.value || '').trim();
+            if (roomValue) {
+                params.set('room', roomValue);
+            }
+            const queryValue = (searchInput.value || '').trim();
+            if (queryValue) {
+                params.set('q', queryValue);
+            }
+            const queryString = params.toString();
+            printLink.setAttribute('href', queryString ? `${baseUrl}?${queryString}` : baseUrl);
+        }
+
+        async function openPrintInNewWindow(url) {
+            const win = window.open('', '_blank', 'noopener');
+            if (!win) {
+                window.location.href = url;
+                return;
+            }
+            win.document.write('<p style="font-family: system-ui, sans-serif; padding: 1rem;">Loading PDF...</p>');
+            try {
+                const resp = await fetch(url, { credentials: 'same-origin' });
+                if (!resp.ok) {
+                    throw new Error(`HTTP ${resp.status}`);
+                }
+                const blob = await resp.blob();
+                const blobUrl = URL.createObjectURL(blob);
+                win.location.replace(blobUrl);
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+            } catch (err) {
+                win.document.body.innerHTML = '<p style="font-family: system-ui, sans-serif; padding: 1rem;">Unable to open PDF.</p>';
+                win.location.href = url;
+            }
+        }
+
+        function setActiveDay(day) {
+            activeDay = day || '';
+            dayTabs.forEach(tab => {
+                const isActive = (tab.dataset.dayFilter || '') === activeDay;
+                tab.classList.toggle('is-active', isActive);
+            });
+            updatePrintLink();
+            updateSearch();
+        }
+
+        function openModal(card) {
+            const title = card.dataset.eventName || 'Event details';
+            const time = card.dataset.eventTime || '';
+            const location = card.dataset.eventLocation || '';
+            const organizer = card.dataset.eventOrganizer || '';
+            const day = card.dataset.eventDay || '';
+            const description = card.dataset.eventDescription || '';
+            const url = card.dataset.eventUrl || '';
+
+            modalTitle.textContent = title;
+            modalMeta.innerHTML = '';
+            const metaItems = [
+                time ? `<span><i class="bi bi-clock"></i>${time}</span>` : '',
+                location ? `<span><i class="bi bi-geo-alt"></i>${location}</span>` : '',
+                organizer ? `<span><i class="bi bi-person"></i>${organizer}</span>` : '',
+                day ? `<span><i class="bi bi-calendar3"></i>${day}</span>` : ''
+            ].filter(Boolean).join('');
+            modalMeta.innerHTML = metaItems;
+
+            modalDescription.textContent = description || 'No description available.';
+
+            modalActions.innerHTML = '';
+            // Determine schedule-level source and fallback URL
+            const scheduleShell = document.querySelector('.schedule-shell');
+            const scheduleSource = (card.dataset.scheduleSource || (scheduleShell && scheduleShell.dataset
+                .sourceType) || '').toLowerCase();
+            const scheduleSourceUrl = (scheduleShell && scheduleShell.dataset.sourceUrl) || '';
+
+            // Build link: prefer event URL, fallback to schedule-level URL
+            const href = url || scheduleSourceUrl || '';
+            // Determine visible label (empty for local)
+            const label = scheduleSource === 'guidebook' ? 'View on Guidebook' :
+                scheduleSource === 'sessionize' ? 'View on Sessionize' :
+                scheduleSource === 'pretalx' ? 'View on Pretalx' :
+                scheduleSource === 'furconnect' ? 'View on Furconnect' :
+                scheduleSource === 'local' ? '' : 'View on Sched';
+            // Only render the external link when we have a URL *and* a non-empty label
+            if (href && label) {
+                const link = document.createElement('a');
+                link.className = 'schedule-modal-link';
+                link.href = href;
+                link.target = '_blank';
+                link.rel = 'noopener';
+                // prepend icon then text
+                link.innerHTML = `<i class="bi bi-box-arrow-up-right"></i> ${label}`;
+                modalActions.appendChild(link);
+            }
+
+            modal.classList.add('is-open');
+            modal.setAttribute('aria-hidden', 'false');
+        }
+
+        function closeModal() {
+            modal.classList.remove('is-open');
+            modal.setAttribute('aria-hidden', 'true');
+        }
+
+        searchInput.addEventListener('input', () => {
+            updatePrintLink();
+            updateSearch();
+        });
+        roomFilter.addEventListener('change', () => {
+            updatePrintLink();
+            updateSearch();
+        });
+
+        if (printLink) {
+            printLink.addEventListener('click', event => {
+                event.preventDefault();
+                const url = printLink.href;
+                if (url) {
+                    openPrintInNewWindow(url);
+                }
+            });
+        }
+
+        dayTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                setActiveDay(tab.dataset.dayFilter || '');
+            });
+        });
+
+        document.addEventListener('click', event => {
+            const button = event.target.closest('.schedule-open-modal');
+            if (button) {
+                const card = button.closest('.schedule-card');
+                if (card) {
+                    openModal(card);
+                }
+            }
+        });
+
+        modalClose.addEventListener('click', closeModal);
+        modal.addEventListener('click', event => {
+            if (event.target === modal) {
+                closeModal();
+            }
+        });
+
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape' && modal.classList.contains('is-open')) {
+                closeModal();
+            }
+        });
+
+        // Async export integration (modal)
+        const asyncBtn = document.getElementById('async-export-btn');
+        const exportModal = document.getElementById('export-modal');
+        const exportModalClose = document.getElementById('export-modal-close');
+        const progressBar = document.getElementById('export-progress-bar');
+        const statusMsg = document.getElementById('export-status-msg');
+        const downloadLink = document.getElementById('export-download-link');
+        let currentExportTaskId = null;
+        let currentExportStatusUrl = null;
+        let currentExportDownloadUrl = null;
+
+        function openExportModal() {
+            exportModal.classList.add('is-open');
+            exportModal.setAttribute('aria-hidden', 'false');
+        }
+
+        function closeExportModal() {
+            exportModal.classList.remove('is-open');
+            exportModal.setAttribute('aria-hidden', 'true');
+        }
+
+        exportModalClose && exportModalClose.addEventListener('click', async () => {
+            // request cancellation if an export is running
+            if (currentExportTaskId && currentExportStatusUrl) {
+                try {
+                    // check status first to avoid cancelling a just-completed job
+                    const sresp = await fetch(currentExportStatusUrl);
+                    if (sresp.ok) {
+                        const sjson = await sresp.json();
+                        const st = sjson.status || '';
+                        if (st === 'running' || st === 'started' || st === 'queued') {
+                            try {
+                                await fetch(`/schedules/export/cancel/${currentExportTaskId}`);
+                            } catch (e) {}
+                        }
+                    }
+                } catch (e) {
+                    try {
+                        fetch(`/schedules/export/cancel/${currentExportTaskId}`);
+                    } catch (ee) {}
+                }
+                currentExportTaskId = null;
+                currentExportStatusUrl = null;
+                currentExportDownloadUrl = null;
+            }
+            closeExportModal();
+        });
+
+        document.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Escape') {
+                if (exportModal && exportModal.classList.contains('is-open')) {
+                    closeExportModal();
+                }
+            }
+        });
+
+        asyncBtn && asyncBtn.addEventListener('click', async () => {
+            try {
+                asyncBtn.setAttribute('disabled', 'disabled');
+                openExportModal();
+                statusMsg.textContent = 'Starting...';
+                progressBar.style.width = '2%';
+                if (downloadLink) downloadLink.style.display = 'none';
+
+                const startUrl = '{% url "schedule_export_start" slug %}';
+                const resp = await fetch(startUrl);
+                if (!resp.ok) {
+                    let body = '';
+                    try {
+                        body = await resp.text();
+                    } catch (e) {}
+                    statusMsg.textContent = `Failed to start export: ${resp.status} ${body}`;
+                    asyncBtn.removeAttribute('disabled');
+                    return;
+                }
+                const json = await resp.json();
+                const statusUrl = json.status_url;
+                const dlUrl = json.download_url;
+                currentExportTaskId = json.task_id;
+                currentExportStatusUrl = statusUrl;
+                currentExportDownloadUrl = dlUrl;
+                // Poll
+                const poll = setInterval(async () => {
+                    try {
+                        const sresp = await fetch(statusUrl);
+                        if (!sresp.ok) throw new Error('status fetch failed');
+                        const sjson = await sresp.json();
+                        const prog = sjson.progress || 0;
+                        progressBar.style.width = prog + '%';
+                        statusMsg.textContent = sjson.message || sjson.status || '';
+                        if (sjson.status === 'done') {
+                            clearInterval(poll);
+                            progressBar.style.width = '100%';
+                            statusMsg.textContent = 'Complete';
+                            if (downloadLink) {
+                                downloadLink.href = dlUrl;
+                                downloadLink.style.display = '';
+                            }
+                            // Auto-trigger download without navigating away
+                            try {
+                                const a = document.createElement('a');
+                                a.href = dlUrl;
+                                a.download = '';
+                                document.body.appendChild(a);
+                                a.click();
+                                a.remove();
+                            } catch (e) {
+                                // fallback: set location
+                                window.location = dlUrl;
+                            }
+                            // show completion briefly then auto-close modal
+                            setTimeout(() => {
+                                try {
+                                    closeExportModal();
+                                } catch (e) {}
+                            }, 1200);
+                            asyncBtn.removeAttribute('disabled');
+                            currentExportTaskId = null;
+                            currentExportStatusUrl = null;
+                            currentExportDownloadUrl = null;
+                        } else if (sjson.status === 'error') {
+                            clearInterval(poll);
+                            statusMsg.textContent = 'Error: ' + (sjson.message || '');
+                            asyncBtn.removeAttribute('disabled');
+                            currentExportTaskId = null;
+                        }
+                    } catch (err) {
+                        clearInterval(poll);
+                        statusMsg.textContent = 'Error polling status';
+                        asyncBtn.removeAttribute('disabled');
+                        currentExportTaskId = null;
+                    }
+                }, 1000);
+
+            } catch (err) {
+                statusMsg.textContent = 'Failed to start export';
+                asyncBtn.removeAttribute('disabled');
+            }
+        });
+
+        // Schema download handled server-side via link to `schedule_schema_download`
+
+        populateRooms();
+        setActiveDay('');
+        updatePrintLink();
+    })();
+</script>
+{% endblock %}

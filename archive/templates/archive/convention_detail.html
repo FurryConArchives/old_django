@@ -1,0 +1,601 @@
+{% extends 'archive/base.html' %}
+{% load static %}
+{% load humanize %}
+{% load archive_tags %}
+
+{% block title %}{{ event_display_title|default:category.name }}{% if selected_year %} {{ selected_year }}{% endif %} - Furry Con Archives{% endblock %}
+
+{% block extra_css %}
+<style>
+{% include 'archive/partials/document_detail_styles.html' %}
+
+    .convention-tabs {
+        margin-bottom: 1.75rem;
+    }
+
+    .year-tabs,
+    .content-tabs {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 0.5rem;
+        overflow-x: auto;
+        padding-bottom: 0.35rem;
+        scrollbar-width: thin;
+    }
+
+    .content-tabs {
+        margin-top: 0.75rem;
+    }
+
+    .year-tab,
+    .content-tab {
+        flex-shrink: 0;
+        padding: 0.55rem 1rem;
+        border-radius: 999px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-secondary);
+        color: var(--text-secondary);
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        white-space: nowrap;
+        transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+    }
+
+    .year-tab:hover,
+    .content-tab:hover {
+        color: var(--accent-color);
+        border-color: rgba(0, 212, 255, 0.35);
+        background: rgba(0, 212, 255, 0.08);
+    }
+
+    .year-tab.active,
+    .content-tab.active {
+        color: #fff;
+        background: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+
+    .year-tab.active:hover,
+    .content-tab.active:hover {
+        color: #fff;
+        background: var(--accent-color);
+        border-color: var(--accent-color);
+    }
+
+    .con-event-header {
+        display: flex;
+        gap: 1.25rem;
+        align-items: flex-start;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .con-event-logo {
+        width: 88px;
+        height: 88px;
+        flex-shrink: 0;
+        border-radius: 18px;
+        background: var(--bg-secondary);
+        border: 1px solid rgba(0, 212, 255, 0.18);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        padding: 0.5rem;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
+    }
+
+    .con-event-logo img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }
+
+    .con-event-logo i {
+        font-size: 2rem;
+        color: var(--text-muted);
+    }
+
+    .con-event-intro {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .con-event-intro h1 {
+        font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+        font-weight: 900;
+        margin: 0 0 0.5rem;
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+    }
+
+    .con-event-dates {
+        margin: 0 0 0.65rem;
+        color: var(--text-secondary);
+        font-size: 1rem;
+        font-weight: 500;
+    }
+
+    .con-event-series {
+        margin: 0;
+        font-size: 0.9rem;
+        color: var(--text-muted);
+    }
+
+    .con-event-series a {
+        color: var(--accent-color);
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .con-tab-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .convention-document-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.25rem;
+    }
+
+    .convention-document-grid .document-card {
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-sm);
+        overflow: hidden;
+    }
+
+    .convention-document-grid .document-thumbnail {
+        display: block;
+        aspect-ratio: 3/4;
+        position: relative;
+        background: var(--bg-primary);
+    }
+
+    .convention-document-grid .document-thumbnail img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .convention-document-grid .document-type-badge {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        font-size: 0.7rem;
+        padding: 0.2rem 0.5rem;
+        background: rgba(0,0,0,0.7);
+        border-radius: 4px;
+    }
+
+    .convention-document-grid .document-content {
+        padding: 1rem;
+    }
+
+    .convention-document-grid .document-title {
+        font-size: 1rem;
+        margin: 0 0 0.5rem;
+    }
+
+    .convention-document-grid .document-title a {
+        color: var(--text-primary);
+        text-decoration: none;
+    }
+
+    .convention-document-grid .document-meta {
+        display: flex;
+        gap: 0.75rem;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        margin-bottom: 0.75rem;
+    }
+
+    .convention-document-grid .btn-small {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.45rem 0.85rem;
+        border-radius: 999px;
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        text-decoration: none;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .vault-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .vault-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.85rem 1rem;
+        background: var(--bg-tertiary);
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border-color);
+        flex-wrap: wrap;
+    }
+
+    .empty-tab-state {
+        text-align: center;
+        padding: 2.5rem 1rem;
+        color: var(--text-secondary);
+    }
+
+    .empty-tab-state i {
+        font-size: 2.5rem;
+        color: var(--text-muted);
+        display: block;
+        margin-bottom: 0.75rem;
+    }
+
+    .stats-grid-boxes {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 1rem;
+    }
+
+    .stats-grid-boxes .stat-box {
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-sm);
+        padding: 1.1rem;
+        text-align: center;
+    }
+
+    .stats-grid-boxes .stat-box-value {
+        display: block;
+        font-size: clamp(1.05rem, 2.4vw, 1.75rem);
+        font-weight: 800;
+        color: var(--accent-color);
+        line-height: 1.1;
+        overflow-wrap: normal;
+        word-break: normal;
+    }
+
+    .stats-grid-boxes .stat-box-value.currency-value {
+        white-space: nowrap;
+        font-size: clamp(0.95rem, 2.2vw, 1.65rem);
+    }
+
+    .stats-grid-boxes .stat-box-label {
+        display: block;
+        margin-top: 0.35rem;
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .stats-grid-boxes .stat-box-icon {
+        display: block;
+        font-size: 1.75rem;
+        line-height: 1.1;
+    }
+
+    .stats-grid-boxes .stat-box-icon.yes {
+        color: #3ecf8e;
+    }
+
+    .stats-grid-boxes .stat-box-icon.no {
+        color: #f07178;
+    }
+
+    .stats-section-note {
+        margin: 0 0 1rem 0;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+
+    .stats-cancelled-note {
+        margin: 0 0 1rem 0;
+        color: var(--warning-color, #e8a838);
+        font-size: 0.9rem;
+    }
+
+    @media (max-width: 768px) {
+        .con-event-header {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="document-container">
+    <header class="con-event-header">
+        <div class="con-event-logo">
+            {% if category.logo %}
+            <img src="{{ category.logo }}" alt="{{ category.name }} logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <i class="bi bi-building" style="display:none;"></i>
+            {% else %}
+            <i class="bi bi-building"></i>
+            {% endif %}
+        </div>
+        <div class="con-event-intro">
+            <h1>{{ event_display_title|default:category.name }}</h1>
+            {% if event_date_range %}
+            <p class="con-event-dates">{{ event_date_range }}</p>
+            {% elif selected_year %}
+            <p class="con-event-dates">{{ selected_year }}</p>
+            {% endif %}
+            <div class="doc-meta-chips">
+                {% if display_location %}
+                <span class="meta-chip"><i class="bi bi-geo-alt"></i> {{ display_location }}</span>
+                {% endif %}
+                {% if event_duration_days %}
+                <span class="meta-chip"><i class="bi bi-calendar3"></i> {{ event_duration_days }} day{{ event_duration_days|pluralize }}</span>
+                {% endif %}
+                {% if years %}
+                <span class="meta-chip"><i class="bi bi-clock-history"></i> {{ years|length }} event{{ years|length|pluralize }} since {{ years|last }}</span>
+                {% endif %}
+            </div>
+        </div>
+        <a href="{% url 'category_browse' %}" class="back-btn">
+            <i class="bi bi-arrow-left"></i>
+            <span>Back</span>
+        </a>
+    </header>
+
+    <div class="convention-tabs">
+        {% if years %}
+        <nav class="year-tabs" aria-label="Convention years">
+            {% for y in years %}
+            <a href="{% url 'convention_detail_year' slug=category.slug year=y %}{% if active_tab != 'overview' %}?tab={{ active_tab }}{% endif %}"
+               class="year-tab{% if y == selected_year %} active{% endif %}">{{ y }}</a>
+            {% endfor %}
+        </nav>
+        {% endif %}
+
+        {% if selected_year %}
+        <nav class="content-tabs" aria-label="Event sections">
+            {% with base_url=category.slug year_val=selected_year %}
+            <a href="{% url 'convention_detail_year' slug=base_url year=year_val %}?tab=overview" class="content-tab{% if active_tab == 'overview' %} active{% endif %}"><i class="bi bi-info-circle"></i> Overview</a>
+            <a href="{% url 'convention_detail_year' slug=base_url year=year_val %}?tab=conbook" class="content-tab{% if active_tab == 'conbook' %} active{% endif %}"><i class="bi bi-book"></i> Conbook</a>
+            <a href="{% url 'convention_detail_year' slug=base_url year=year_val %}?tab=schedule" class="content-tab{% if active_tab == 'schedule' %} active{% endif %}"><i class="bi bi-calendar-week"></i> Schedule</a>
+            <a href="{% url 'convention_detail_year' slug=base_url year=year_val %}?tab=documents" class="content-tab{% if active_tab == 'documents' %} active{% endif %}"><i class="bi bi-file-pdf"></i> Documents</a>
+            <a href="{% url 'convention_detail_year' slug=base_url year=year_val %}?tab=vault" class="content-tab{% if active_tab == 'vault' %} active{% endif %}"><i class="bi bi-safe"></i> The Vault</a>
+            <a href="{% url 'convention_detail_year' slug=base_url year=year_val %}?tab=stats" class="content-tab{% if active_tab == 'stats' %} active{% endif %}"><i class="bi bi-bar-chart"></i> Stats</a>
+            {% endwith %}
+        </nav>
+        {% endif %}
+    </div>
+
+    {% if active_tab == 'overview' and selected_year %}
+    {% include 'archive/partials/convention_overview.html' %}
+
+    {% elif active_tab == 'conbook' and conbook %}
+    {% include 'archive/partials/document_detail_panel.html' with document=conbook document_pdf_views=conbook_views ia_mirrors=conbook_ia_mirrors consurf_event=consurf_event consurf_event_year=selected_year consurf_event_address=display_location event_display_description=event_description consurf_convention_url=consurf_url show_full_details_link=True %}
+    {% if conbooks|length > 1 %}
+    <div class="info-section" style="margin-top: 2rem;">
+        <h2 class="section-title"><i class="bi bi-bookshelf"></i> Other {{ selected_year }} editions</h2>
+        <div class="convention-document-grid">
+            {% for doc in conbooks %}
+            {% if doc.slug != conbook.slug %}
+            {% include 'archive/partials/document_card_minimal.html' with document=doc %}
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% elif active_tab == 'schedule' and selected_year %}
+    <div class="con-tab-stack">
+        <div class="info-section">
+            <h2 class="section-title"><i class="bi bi-calendar-week"></i> {{ selected_year }} Schedule</h2>
+            {% if schedule %}
+            <p class="convention-description">Browse the full interactive schedule for {{ category.name }} {{ selected_year }}.</p>
+            <div class="consurf-actions">
+                <a href="{% url 'schedule_view' slug=schedule.route_slug %}" class="btn-view">
+                    <i class="bi bi-calendar-event"></i> Open schedule
+                </a>
+            </div>
+            {% else %}
+            <div class="empty-tab-state">
+                <i class="bi bi-calendar-x"></i>
+                <p>No schedule archived for {{ selected_year }}.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% elif active_tab == 'stats' and selected_year %}
+    <div class="con-tab-stack">
+        <div class="info-section">
+            <h2 class="section-title"><i class="bi bi-archive"></i> Archive statistics</h2>
+            <div class="stats-grid-boxes">
+                <div class="stat-box">
+                    <span class="stat-box-value">{{ archive_stats.document_count }}</span>
+                    <span class="stat-box-label">Documents</span>
+                </div>
+                <div class="stat-box">
+                    {% if archive_stats.has_conbook %}
+                    <span class="stat-box-icon yes" aria-label="Conbook archived"><i class="bi bi-check-circle-fill"></i></span>
+                    {% else %}
+                    <span class="stat-box-icon no" aria-label="No conbook archived"><i class="bi bi-x-circle-fill"></i></span>
+                    {% endif %}
+                    <span class="stat-box-label">Conbook</span>
+                </div>
+                <div class="stat-box">
+                    {% if archive_stats.has_schedule %}
+                    <span class="stat-box-icon yes" aria-label="Schedule archived"><i class="bi bi-check-circle-fill"></i></span>
+                    {% else %}
+                    <span class="stat-box-icon no" aria-label="No schedule archived"><i class="bi bi-x-circle-fill"></i></span>
+                    {% endif %}
+                    <span class="stat-box-label">Schedule</span>
+                </div>
+                <div class="stat-box">
+                    {% if archive_stats.has_vault %}
+                    <span class="stat-box-value">{{ archive_stats.vault_item_count|intcomma }}</span>
+                    {% else %}
+                    <span class="stat-box-icon no" aria-label="No vault items archived"><i class="bi bi-x-circle-fill"></i></span>
+                    {% endif %}
+                    <span class="stat-box-label">Vault</span>
+                </div>
+                {% if archive_stats.conbook_views is not None %}
+                <div class="stat-box">
+                    <span class="stat-box-value">{{ archive_stats.conbook_views|intcomma }}</span>
+                    <span class="stat-box-label">Conbook views</span>
+                </div>
+                {% endif %}
+                {% if archive_stats.other_document_views is not None %}
+                <div class="stat-box">
+                    <span class="stat-box-value">{{ archive_stats.other_document_views|intcomma }}</span>
+                    <span class="stat-box-label">Other PDF views</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if consurf_event_stats %}
+        <div class="info-section">
+            {% if consurf_event_stats.source == 'mlpcon' %}
+            <h2 class="section-title"><i class="bi bi-people"></i> Community statistics</h2>
+            {% else %}
+            <h2 class="section-title"><i class="bi bi-people"></i> Consurf statistics</h2>
+            {% endif %}
+            {% if consurf_event_stats.is_cancelled %}
+            <p class="stats-cancelled-note"><i class="bi bi-exclamation-triangle"></i> This event is marked as cancelled on Consurf.</p>
+            {% endif %}
+            {% if consurf_event_stats.has_stats %}
+            <div class="stats-grid-boxes">
+                {% for box in consurf_event_stats.boxes %}
+                <div class="stat-box">
+                    <span class="stat-box-value{% if box.format == 'currency' %} currency-value{% endif %}">
+                        {% if box.format == 'currency' %}
+                            {% if box.currency_code and box.currency_code != 'USD' %}
+                                {{ box.currency_symbol|default:"$"}}{{ box.value|intcomma }}
+                            {% else %}
+                                {{ box.currency_symbol|default:"$" }}{{ box.value|intcomma }}
+                            {% endif %}
+                        {% else %}
+                            {{ box.value|intcomma }}
+                        {% endif %}
+                    </span>
+                    <span class="stat-box-label">{{ box.label }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% elif consurf_event_stats.source == 'mlpcon' %}
+            <p class="stats-section-note">No attendance or charity totals have been recorded for this event on MLPCON.INFO yet.</p>
+            {% else %}
+            <p class="stats-section-note">No community statistics have been recorded for this event on Consurf yet.</p>
+            {% endif %}
+            <div class="consurf-actions" style="margin-top: 1rem;">
+                {% if consurf_event_stats.source == 'mlpcon' %}
+                <a href="{{ consurf_event_stats.url|default:consurf_url }}" target="_blank" rel="noopener noreferrer" class="consurf-button">
+                    <img src="https://mlpcon.info/favicon.ico" alt="MLPCON.INFO" class="consurf-favicon">
+                    <span>View on MLPCON.INFO</span>
+                </a>
+                {% else %}
+                <a href="{{ consurf_event_stats.url|default:consurf_url }}" target="_blank" rel="noopener noreferrer" class="consurf-button">
+                    <img src="https://consurf.net/favicon.ico" alt="Consurf" class="consurf-favicon">
+                    <span>View on Consurf</span>
+                </a>
+                {% endif %}
+            </div>
+            <div class="consurf-credit">
+                {% if consurf_event_stats.source == 'mlpcon' %}
+                <span class="consurf-powered-by">Event statistics from <a href="https://mlpcon.info" target="_blank" rel="noopener noreferrer">MLPCON.INFO</a></span>
+                {% else %}
+                <span class="consurf-powered-by">Event statistics from <a href="https://consurf.net" target="_blank" rel="noopener noreferrer">Consurf</a></span>
+                {% endif %}
+            </div>
+        </div>
+        {% elif consurf_stats_supported and consurf_url %}
+        <div class="info-section">
+            <h2 class="section-title"><i class="bi bi-people"></i> Consurf statistics</h2>
+            <p class="stats-section-note">Community statistics for this event are not available yet.</p>
+            <div class="consurf-actions" style="margin-top: 1rem;">
+                <a href="{{ consurf_url }}" target="_blank" rel="noopener noreferrer" class="consurf-button">
+                    <img src="https://consurf.net/favicon.ico" alt="Consurf" class="consurf-favicon">
+                    <span>View on Consurf</span>
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    {% else %}
+    <div class="con-tab-stack">
+        {% if not selected_year %}
+        <div class="info-section empty-tab-state">
+            <i class="bi bi-calendar-x"></i>
+            <h2>No event years found</h2>
+            <p>We don't have year-specific data for {{ category.name }} yet.</p>
+            <a href="{% url 'document_list' %}?category={{ category.slug }}" class="btn-view" style="margin-top:1rem;">Browse all documents</a>
+        </div>
+
+        {% elif active_tab == 'conbook' %}
+        <div class="info-section empty-tab-state">
+            <i class="bi bi-book"></i>
+            <p>No conbook archived for {{ category.name }} {{ selected_year }} yet.</p>
+            <a href="{% url 'contact' %}" class="btn-view" style="margin-top:1rem;">Contribute a conbook</a>
+        </div>
+
+        {% elif active_tab == 'documents' %}
+        <div class="info-section">
+            <h2 class="section-title"><i class="bi bi-file-pdf"></i> {{ selected_year }} Documents</h2>
+            {% if other_documents or conbooks %}
+            <div class="convention-document-grid">
+                {% for doc in conbooks %}{% include 'archive/partials/document_card_minimal.html' with document=doc %}{% endfor %}
+                {% for doc in other_documents %}{% include 'archive/partials/document_card_minimal.html' with document=doc %}{% endfor %}
+            </div>
+            <div class="consurf-actions" style="margin-top: 1.25rem;">
+                <a href="{% url 'document_list' %}?category={{ category.slug }}&year={{ selected_year }}" class="consurf-button">View full document list</a>
+            </div>
+            {% else %}
+            <div class="empty-tab-state">
+                <i class="bi bi-file-pdf"></i>
+                <p>No documents archived for {{ selected_year }}.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        {% elif active_tab == 'vault' %}
+        <div class="info-section">
+            <h2 class="section-title"><i class="bi bi-safe"></i> Physical holdings</h2>
+            {% if vault_items %}
+            <div class="vault-list">
+                {% for item in vault_items %}
+                <div class="vault-row">
+                    <div><strong>{{ item.item_type }}</strong>{% if item.notes %} — {{ item.notes }}{% endif %}</div>
+                    <div>{{ item.quantity }} cop{{ item.quantity|pluralize:"y,ies" }}{% if item.donators %} · donated by {{ item.donators }}{% endif %}</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-tab-state">
+                <i class="bi bi-safe"></i>
+                <p>No physical holdings recorded for {{ selected_year }}.</p>
+                <a href="{% url 'physical_inventory_grid' %}" class="consurf-button" style="margin-top:1rem;">Browse The Vault</a>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    if (window.FCA && FCA.initDocThumbs) {
+        FCA.initDocThumbs();
+    }
+});
+</script>
+{% endblock %}

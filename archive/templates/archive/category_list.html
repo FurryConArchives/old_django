@@ -1,0 +1,339 @@
+{% extends 'archive/base.html' %}
+
+{% block title %}Categories - Furry Con Archives{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        margin-bottom: 3.5rem;
+        padding-bottom: 2rem;
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    .page-header h1 {
+        font-size: 2.5rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, var(--text-primary), var(--accent-color));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+        letter-spacing: -0.5px;
+    }
+
+    .page-header h1 i {
+        color: var(--accent-color);
+        font-size: 2.2rem;
+        transition: all 0.3s ease;
+    }
+
+    .page-header h1:hover i {
+        transform: rotate(8deg) scale(1.1);
+    }
+
+    .page-header p {
+        color: var(--text-secondary);
+        margin-top: 1rem;
+        font-size: 1.05rem;
+        font-weight: 500;
+    }
+    
+    .categories-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+        gap: 2.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .category-card {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius);
+        padding: 2.25rem;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        box-shadow: var(--shadow);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .category-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--accent-color), var(--primary-color));
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .category-card:hover {
+        transform: translateY(-8px);
+        box-shadow: var(--shadow-hover);
+        border-color: var(--primary-color);
+    }
+
+    .category-card:hover::before {
+        opacity: 1;
+    }
+    
+    .category-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .category-title {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .category-title i {
+        color: var(--accent-color);
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .category-title a {
+        color: var(--text-primary);
+        text-decoration: none;
+        font-size: 1.4rem;
+        font-weight: 700;
+        transition: color 0.3s ease;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .category-title a:hover {
+        color: var(--accent-color);
+    }
+    
+    .category-count {
+        color: var(--text-muted);
+        font-size: 0.85rem;
+        font-weight: 700;
+        padding: 0.5rem 1rem;
+        background: linear-gradient(135deg, var(--bg-tertiary), var(--bg-primary));
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border-color);
+        white-space: nowrap;
+        transition: all 0.3s ease;
+    }
+
+    .category-count.has-documents {
+        color: var(--accent-color);
+        border-color: var(--accent-color);
+        background: linear-gradient(135deg, rgba(0, 102, 204, 0.12), rgba(0, 212, 255, 0.08));
+    }
+    
+    .category-description {
+        color: var(--text-secondary);
+        margin-top: 1.25rem;
+        line-height: 1.7;
+        font-size: 0.95rem;
+        flex: 1;
+    }
+    
+    .subcategories {
+        margin-top: 1.75rem;
+        padding-top: 1.75rem;
+        border-top: 1px solid rgba(0, 212, 255, 0.15);
+    }
+
+    .subcategories-label {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        font-weight: 700;
+        margin-bottom: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+
+    .subcategories-label i {
+        font-size: 0.9rem;
+    }
+    
+    .subcategory-list {
+        padding-left: 1.5rem;
+        border-left: 2px solid var(--accent-color);
+        display: flex;
+        flex-direction: column;
+        gap: 0.85rem;
+    }
+    
+    .subcategory-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.65rem 1rem;
+        transition: all 0.3s ease;
+        border-radius: var(--radius-sm);
+        margin-left: -1rem;
+        margin-right: -1rem;
+    }
+
+    .subcategory-item:hover {
+        background: rgba(0, 212, 255, 0.05);
+        padding-left: 1.5rem;
+    }
+    
+    .subcategory-link {
+        color: var(--text-secondary);
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        flex: 1;
+        min-width: 0;
+        transition: color 0.3s ease;
+        font-weight: 600;
+    }
+
+    .subcategory-link i {
+        color: var(--accent-color);
+        font-size: 0.85rem;
+        flex-shrink: 0;
+        opacity: 0.7;
+        transition: all 0.3s ease;
+    }
+    
+    .subcategory-link:hover {
+        color: var(--accent-color);
+    }
+
+    .subcategory-link:hover i {
+        opacity: 1;
+        transform: rotate(8deg);
+    }
+
+    .subcategory-count {
+        color: var(--text-muted);
+        font-size: 0.8rem;
+        white-space: nowrap;
+        font-weight: 600;
+    }
+
+    .empty-state {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 6rem 3rem;
+        background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));
+        border: 2px solid var(--border-color);
+        border-radius: var(--radius);
+    }
+
+    .empty-state i {
+        font-size: 5rem;
+        background: linear-gradient(135deg, var(--accent-color), var(--primary-color));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 1.5rem;
+        opacity: 0.8;
+    }
+
+    .empty-state p {
+        color: var(--text-secondary);
+        font-size: 1.1rem;
+        font-weight: 500;
+    }
+
+    @media (max-width: 768px) {
+        .categories-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .page-header h1 {
+            font-size: 2rem;
+        }
+
+        .category-card {
+            padding: 1.5rem;
+        }
+
+        .category-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .category-title a {
+            white-space: normal;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>
+        <i class="bi bi-folder"></i>
+        Browse by Category
+    </h1>
+    <p>Explore documents organized by category and subcategory</p>
+</div>
+
+<div class="categories-grid">
+    {% for category in categories %}
+    <div class="category-card">
+        <div class="category-header">
+            <div class="category-title">
+                <i class="bi bi-folder{% if category.subcategories.all %}2{% endif %}"></i>
+                <a href="{% url 'document_list' %}?category={{ category.slug }}">{{ category.name }}</a>
+            </div>
+            <div class="category-count {% if category.doc_count > 0 %}has-documents{% endif %}">
+                {{ category.doc_count }} document{{ category.doc_count|pluralize }}
+            </div>
+        </div>
+        
+        {% if category.description %}
+        <p class="category-description">{{ category.description }}</p>
+        {% endif %}
+        
+        {% if category.subcategories_list %}
+        <div class="subcategories">
+            <div class="subcategories-label">
+                <i class="bi bi-folder-symlink"></i>
+                Subcategories
+            </div>
+            <div class="subcategory-list">
+                {% for subcategory in category.subcategories_list %}
+                <div class="subcategory-item">
+                    <a href="{% url 'document_list' %}?category={{ subcategory.slug }}" class="subcategory-link">
+                        <i class="bi bi-folder-fill"></i>
+                        <span>{{ subcategory.name }}</span>
+                    </a>
+                    <span class="subcategory-count">
+                        {{ subcategory.sub_doc_count }} doc{{ subcategory.sub_doc_count|pluralize }}
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% empty %}
+    <div class="empty-state">
+        <i class="bi bi-folder-x"></i>
+        <p>No categories available yet.</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+

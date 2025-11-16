@@ -1,0 +1,316 @@
+{% extends 'archive/base.html' %}
+{% block title %}Browse Convention Schedules{% endblock %}
+{% block extra_css %}
+<style>
+  .category-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+    gap: 2rem;
+    margin-top: 1.5rem;
+  }
+  .category-card {
+    background: var(--bg-secondary);
+    border-radius: var(--radius);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    text-decoration: none;
+    display: block;
+    color: inherit;
+  }
+  .category-content {
+    padding: 2.5rem 2rem 2rem 2rem;
+  }
+  .category-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-hover);
+    border-color: var(--primary-color);
+  }
+  .category-logo-container {
+    position: relative;
+    width: 100%;
+    height: 0;
+    padding-bottom: 25%;
+    background: var(--bg-tertiary);
+    overflow: hidden;
+  }
+  .category-logo {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 1.5rem;
+    transition: transform 0.3s ease;
+  }
+  .category-logo-placeholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 3rem;
+  }
+  .category-name {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+    line-height: 1.3;
+  }
+  .category-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .info-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+  }
+  .info-item i {
+    color: var(--accent-color);
+    font-size: 1rem;
+    width: 20px;
+    flex-shrink: 0;
+  }
+  .info-item strong {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+  .category-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+  }
+  .meta-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+  }
+  .meta-badge i {
+    color: var(--accent-color);
+  }
+  .search-form {
+     width: 100%;
+     margin: 0 0 1.5rem 0;
+     display: flex;
+     justify-content: flex-start;
+  }
+  .search-form .search-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    width: 100%;
+  }
+  .search-form input[type="search"] {
+    flex: 1;
+    padding: 0.6rem 0.85rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    transition: box-shadow .12s ease, transform .08s ease;
+    font-size: 1rem;
+  }
+  .search-form input[type="search"]:focus {
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(38,154,255,0.06);
+    border-color: rgba(38,154,255,0.35);
+  }
+  .search-form .btn {
+    padding: 0.55rem 0.7rem;
+    border-radius: 8px;
+    background: var(--primary-color);
+    color: #fff;
+    border: none;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .search-form .btn:hover {
+    background: var(--accent-color);
+    color: #fff;
+  }
+  .page-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+  .page-title {
+    font-size: clamp(1.4rem, 5vw, 2rem);
+    font-weight: 800;
+    margin: 0;
+  }
+
+  @media (max-width: 768px) {
+    .category-grid {
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+    }
+    .category-content {
+      padding: 1.25rem 1rem;
+    }
+    .category-name {
+      font-size: 1.25rem;
+    }
+    .search-form .search-row {
+      flex-wrap: nowrap;
+    }
+    .search-form input[type="search"] {
+      min-width: 0;
+    }
+    .search-form .btn {
+      width: auto;
+      flex-shrink: 0;
+      min-width: 44px;
+      min-height: 44px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .category-logo-container {
+      padding-bottom: 30%;
+    }
+    .category-meta {
+      gap: 0.5rem;
+    }
+    .meta-badge {
+      font-size: 0.8rem;
+      padding: 0.4rem 0.75rem;
+    }
+  }
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">
+    <i class="bi bi-calendar-event"></i>
+    Browse Convention Schedules
+  </h1>
+</div>
+<form method="get" action="" class="search-form" aria-label="Search schedules">
+  <div class="search-row">
+    <input type="search" name="q" placeholder="Search schedules..." value="{% if search_query %}{{ search_query }}{% endif %}" aria-label="Search schedules">
+    <button class="btn" type="submit" aria-label="Submit search"><i class="bi bi-search"></i></button>
+  </div>
+</form>
+<div class="category-grid" id="schedule-grid" aria-busy="true" aria-label="Loading schedules">
+</div>
+<div class="empty-state" id="schedule-empty-state" style="display:none;">
+  <i class="bi bi-folder-x"></i>
+  <h3>No schedules found</h3>
+  <p>Try another search term to find a convention with schedules.</p>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  if (!window.FCA) {
+    console.error('FCA API client failed to load');
+    return;
+  }
+
+  const searchForm = document.querySelector('.search-form');
+  const searchInput = searchForm?.querySelector('input[name="q"]');
+  const scheduleGrid = document.getElementById('schedule-grid');
+  const emptyState = document.getElementById('schedule-empty-state');
+  let searchTimer = null;
+
+  async function fetchScheduleResults(query, overrideParams) {
+    const params = overrideParams ? new URLSearchParams(overrideParams.toString()) : new URLSearchParams(window.location.search);
+
+    if (query !== null && query !== undefined) {
+      if (query) {
+        params.set('q', query);
+      } else {
+        params.delete('q');
+      }
+    }
+
+    params.delete('page');
+
+    if (scheduleGrid && window.FCA) {
+      scheduleGrid.innerHTML = FCA.renderScheduleCardsSkeleton(6);
+      scheduleGrid.setAttribute('aria-busy', 'true');
+    }
+
+    try {
+      const data = await FCA.loadSchedules({ q: params.get('q') || '' });
+      if (scheduleGrid) {
+        scheduleGrid.innerHTML = (data.results || []).map((cat) => FCA.renderCategoryCard(cat, 'schedule')).join('');
+        scheduleGrid.removeAttribute('aria-busy');
+      }
+      const count = data.count ?? (data.results || []).length;
+      if (emptyState) {
+        emptyState.style.display = count ? 'none' : '';
+      }
+
+      const newUrl = window.location.pathname + (params.toString() ? `?${params.toString()}` : '');
+      window.history.pushState({}, '', newUrl);
+    } catch (error) {
+      console.error('Schedule search update failed', error);
+      window.location.href = window.location.pathname + (query ? `?q=${encodeURIComponent(query)}` : '');
+    }
+  }
+
+  if (searchForm && searchInput) {
+    searchForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      fetchScheduleResults(searchInput.value.trim());
+    });
+
+    searchInput.addEventListener('input', function() {
+      clearTimeout(searchTimer);
+      const value = this.value.trim();
+      searchTimer = setTimeout(() => fetchScheduleResults(value), 400);
+    });
+  }
+
+  // Intercept pagination link clicks to load via AJAX
+  document.addEventListener('click', function(e) {
+    const a = e.target.closest('.pagination a');
+    if (!a) return;
+    e.preventDefault();
+    const href = new URL(a.href, window.location.origin);
+    const params = new URLSearchParams(href.search);
+    fetchScheduleResults(null, params);
+  });
+
+  // Handle back/forward navigation
+  window.addEventListener('popstate', function() {
+    const params = new URLSearchParams(window.location.search);
+    fetchScheduleResults(null, params);
+  });
+
+  if (scheduleGrid) {
+    scheduleGrid.innerHTML = FCA.renderScheduleCardsSkeleton(6);
+  }
+
+  fetchScheduleResults(null, new URLSearchParams(window.location.search));
+});
+</script>
+{% endblock %}

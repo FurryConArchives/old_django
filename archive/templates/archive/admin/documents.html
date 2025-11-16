@@ -1,0 +1,212 @@
+
+{% extends 'archive/admin/base_admin.html' %}
+{% load dict_filters %}
+
+{% block title %}Manage Documents - Admin{% endblock %}
+
+{% block content %}
+<div class="card" style="margin-bottom: 1.5rem;">
+    <form method="get" style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+        <input type="text" name="search" placeholder="Search documents..." value="{{ search_query }}" class="form-control" style="flex: 1; min-width: 200px;">
+        <select name="status" class="form-control" style="min-width: 150px;">
+            <option value="">All Status</option>
+            <option value="published" {% if current_status == "published" %}selected{% endif %}>Published</option>
+            <option value="unpublished" {% if current_status == "unpublished" %}selected{% endif %}>Unpublished</option>
+        </select>
+        <select id="id_tag_filter" name="tag" class="form-control" style="min-width: 180px;">
+            <option value="">All Tags</option>
+            {% for t in tag_list %}
+                <option value="{{ t }}" {% if current_tag == t %}selected{% endif %}>{{ t }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn"><i class="bi bi-search"></i> Search</button>
+        <a href="{% url 'admin_documents_export' %}?{% if request.GET %}{{ request.GET.urlencode }}{% endif %}" class="btn btn-outline-secondary"><i class="bi bi-download"></i> Export CSV</a>
+        <a href="{% url 'admin_upload' %}" class="btn btn-success"><i class="bi bi-plus-circle"></i> Upload New</a>
+    </form>
+</div>
+
+<div class="card">
+    <table>
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Tags</th>
+                <th>Category</th>
+                <th>Year</th>
+                <th>Convention</th>
+                <th>Source</th>
+                <th>Views</th>
+                <th>Status</th>
+                <th>Uploaded</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for doc in page_obj %}
+            <tr>
+                <td><strong>{{ doc.title }}</strong></td>
+                <td>
+                    {% if doc.tags %}
+                        <a href="?tag={{ doc.tags.name|urlencode }}" class="tag-badge">{{ doc.tags.name }}</a>
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>{{ doc.category.name|default:"-" }}</td>
+                <td>{{ doc.year|default:"-" }}</td>
+                <td>{{ doc.convention_name|default:"-" }}</td>
+                <td>
+                    {% if doc.is_scanned %}
+                        <span style="color: var(--warning-color);" title="Scanned document ({{ doc.text_percentage|floatformat:0 }}% text)">
+                            <i class="bi bi-upc-scan"></i> Scanned
+                        </span>
+                    {% else %}
+                        <span style="color: var(--success-color);" title="Clean copy">
+                            <i class="bi bi-filetype-pdf"></i> Clean Copy
+                        </span>
+                    {% endif %}
+                </td>
+                <td>{{ doc.pdf_view_count|default:0 }}</td>
+                <td>
+                    {% if doc.is_published %}
+                        <span style="color: var(--success-color);"><i class="bi bi-check-circle"></i> Published</span>
+                    {% else %}
+                        <span style="color: var(--warning-color);"><i class="bi bi-x-circle"></i> Draft</span>
+                    {% endif %}
+                </td>
+                <td>{{ doc.uploaded_at|date:"M d, Y" }}</td>
+                <td>
+                    <div class="actions">
+                        <a href="{% url 'document_detail' doc.slug %}" class="btn btn-small btn-secondary" target="_blank">View</a>
+                        <a href="{% url 'admin_edit_document' doc.slug %}" class="btn btn-small">Edit</a>
+                        <a href="{% url 'admin_delete_document' doc.slug %}" class="btn btn-small btn-danger">Delete</a>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="10" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                    No documents found. <a href="{% url 'admin_upload' %}" style="color: var(--accent-color);">Upload your first document</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div style="display: flex; justify-content: center; gap: 0.5rem; margin-top: 1.5rem;">
+    {% if page_obj.has_previous %}
+        <a href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_tag %}&tag={{ current_tag|urlencode }}{% endif %}" class="btn btn-small">&laquo; First</a>
+        <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_tag %}&tag={{ current_tag|urlencode }}{% endif %}" class="btn btn-small">Previous</a>
+    {% endif %}
+    
+    <span class="btn btn-small" style="background: var(--bg-tertiary); color: var(--text-secondary); cursor: default;">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    
+    {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_tag %}&tag={{ current_tag|urlencode }}{% endif %}" class="btn btn-small">Next</a>
+        <a href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_tag %}&tag={{ current_tag|urlencode }}{% endif %}" class="btn btn-small">Last &raquo;</a>
+    {% endif %}
+</div>
+
+{# Always include TomSelect and badge styles so UI works even without pagination #}
+{% block extra_js %}
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+<script>
+    // Initialize TomSelect for tag filter with placeholder
+    try {
+        new TomSelect('#id_tag_filter', {
+            create: false,
+            persist: false,
+            placeholder: 'All Tags',
+            allowEmptyOption: true,
+        });
+    } catch (e) {
+        // ignore if TomSelect fails to init
+        console.warn('TomSelect init failed', e);
+    }
+</script>
+    <style>
+        .tag-badge {
+            display: inline-block;
+            padding: 0.15rem 0.35rem;
+            margin-right: 0.2rem;
+            margin-bottom: 0.1rem;
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border-radius: 0.35rem;
+            font-size: 0.75rem;
+            text-decoration: none;
+            transition: background 0.15s ease;
+            white-space: nowrap;
+        }
+        .tag-badge:hover { background: var(--bg-secondary); color: var(--text-primary); }
+
+        /* Table improvements */
+        .card { overflow-x: auto; }
+        .card table { 
+            width: 100%; 
+            min-width: 1220px;
+            border-collapse: collapse; 
+            table-layout: fixed;
+        }
+        .card thead th { 
+            text-align: left; 
+            padding: 0.6rem 0.7rem; 
+            background: var(--bg-secondary); 
+            color: var(--text-primary); 
+            font-size: 0.8rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .card tbody td { 
+            padding: 0.6rem 0.7rem; 
+            border-top: 1px solid rgba(255,255,255,0.04); 
+            vertical-align: middle;
+            font-size: 0.9rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .card tbody tr:nth-child(odd) { background: transparent; }
+        
+        /* Column width distribution */
+        .card table th:nth-child(1) { width: 18%; }  /* Title */
+        .card table th:nth-child(2) { width: 12%; }  /* Tags */
+        .card table th:nth-child(3) { width: 10%; }  /* Category */
+        .card table th:nth-child(4) { width: 6%; }   /* Year */
+        .card table th:nth-child(5) { width: 14%; }  /* Convention */
+        .card table th:nth-child(6) { width: 11%; }  /* Source */
+        .card table th:nth-child(7) { width: 6%; }   /* Views */
+        .card table th:nth-child(8) { width: 8%; }   /* Status */
+        .card table th:nth-child(9) { width: 9%; }   /* Uploaded */
+        .card table th:nth-child(10) { width: 14%; }  /* Actions */
+
+        .card table th:nth-child(10),
+        .card tbody td:nth-child(10) {
+            min-width: 220px;
+        }
+
+        .card tbody td:first-child {
+            white-space: normal;
+            word-break: break-word;
+        }
+
+        .actions { display: flex; gap: 0.35rem; flex-wrap: wrap; justify-content: flex-start; }
+        .actions .btn { margin: 0; font-size: 0.78rem; padding: 0.32rem 0.58rem; white-space: nowrap; }
+
+        /* Make the filter form inputs consistent height */
+        .card > form .form-control { min-height: 44px; }
+        @media (max-width: 1200px) {
+            .card table { font-size: 0.9rem; }
+            .card tbody td { padding: 0.5rem; }
+            .card thead th { padding: 0.5rem; }
+        }
+        @media (max-width: 800px) {
+            .card > form { flex-direction: column; align-items: stretch; }
+            .card > form .form-control, .card > form .btn { width: 100% !important; }
+            .card table { overflow-x: auto; display: block; }
+        }
+    </style>
+{% endblock %}
+{% endblock %}
+

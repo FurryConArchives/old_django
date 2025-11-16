@@ -1,0 +1,727 @@
+{% extends 'archive/base.html' %}
+
+{% block title %}{{ title }} — Grid View{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Grid layout tokens (do not override site theme variables) */
+    .schedule-grid-shell {
+        --grid-time-col-width: 60px;
+        --grid-room-header-height: 48px;
+        --grid-rooms-row-offset: 12px;
+        --grid-slot-minutes: 15;
+        --grid-slot-height: 32px;
+        color: var(--text-primary);
+    }
+
+    .schedule-grid-shell .schedule-hero {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 1.5rem;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.25rem;
+    }
+
+    @media (max-width: 720px) {
+        .schedule-grid-shell .schedule-hero {
+            flex-wrap: wrap;
+        }
+    }
+
+    .schedule-grid-shell .schedule-kicker {
+        text-transform: uppercase;
+        letter-spacing: 0.22em;
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        margin-bottom: 0.35rem;
+    }
+
+    .schedule-grid-shell .schedule-hero h1 {
+        font-size: 2.1rem;
+        font-weight: 700;
+        margin: 0 0 0.35rem;
+    }
+
+    .schedule-grid-shell .schedule-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        align-items: center;
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+    }
+
+    .schedule-grid-shell .schedule-meta span {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+    .schedule-grid-shell .schedule-actions {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+    }
+
+    .schedule-grid-shell .schedule-divider {
+        height: 1px;
+        background: var(--border-color);
+        margin: 1rem 0 1.5rem;
+        opacity: 0.8;
+    }
+
+    .schedule-grid-shell .schedule-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.45rem 0.85rem;
+        border-radius: var(--radius-sm);
+        background: var(--bg-tertiary);
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: 0.85rem;
+        line-height: 1;
+        text-decoration: none;
+        border: 1px solid var(--border-color);
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        cursor: pointer;
+    }
+
+    .schedule-grid-shell .schedule-link:hover {
+        color: var(--text-primary);
+        transform: translateY(-1px);
+        border-color: var(--accent-color);
+        box-shadow: var(--shadow);
+    }
+
+    .schedule-grid-shell .schedule-tabs {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        padding: 0.6rem 0.75rem;
+        border-radius: var(--radius);
+        border: 1px solid var(--border-color);
+        background: var(--bg-secondary);
+        box-shadow: var(--shadow);
+        align-items: center;
+        margin-bottom: 1rem;
+        margin-left: calc(var(--grid-time-col-width) + var(--grid-rooms-row-offset));
+    }
+
+    .schedule-grid-shell .schedule-tab {
+        border: 1px solid var(--border-color);
+        background: var(--bg-tertiary);
+        color: var(--text-secondary);
+        padding: 0.45rem 0.85rem;
+        border-radius: var(--radius-sm);
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .schedule-grid-shell .schedule-tab.is-active {
+        background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(0, 102, 204, 0.2));
+        color: var(--text-primary);
+        border-color: var(--accent-color);
+        box-shadow: var(--shadow);
+    }
+
+    .schedule-grid-shell .grid-wrapper {
+        position: relative;
+        border: 1px solid var(--border-color);
+        overflow: auto;
+        overflow-y: scroll;
+        -webkit-overflow-scrolling: touch;
+        background: var(--bg-secondary);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+    }
+
+    .schedule-grid-shell .grid-inner {
+        position: relative;
+        display: grid;
+        grid-template-columns: var(--grid-time-col-width) minmax(0, 1fr);
+        grid-template-rows: auto 1fr;
+        min-height: 200px;
+        background-color: transparent;
+        background-image:
+            repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 0, rgba(255, 255, 255, 0.02) 1px, transparent 1px, transparent var(--grid-slot-height)),
+            repeating-linear-gradient(to right, rgba(255, 255, 255, 0.02) 0, rgba(255, 255, 255, 0.02) 1px, transparent 1px, transparent 160px);
+    }
+
+    .schedule-grid-shell .time-column {
+        grid-column: 1;
+        grid-row: 2;
+        display: grid;
+        align-content: start;
+        box-sizing: border-box;
+        background: var(--bg-tertiary);
+        border-right: 1px solid var(--border-color);
+    }
+
+    .schedule-grid-shell .rooms-row {
+        grid-column: 2;
+        grid-row: 1;
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        display: grid;
+        background: var(--bg-secondary);
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .schedule-grid-shell .room-header {
+        height: var(--grid-room-header-height);
+        min-width: 0;
+        box-sizing: border-box;
+        padding: 10px 8px;
+        border-right: 1px solid var(--border-color);
+        background: transparent;
+        text-align: center;
+        font-weight: 700;
+        color: var(--text-primary);
+        font-size: 0.85rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .schedule-grid-shell .timeline {
+        grid-column: 2;
+        grid-row: 2;
+        display: grid;
+        align-items: start;
+        min-width: 0;
+    }
+
+    .schedule-grid-shell .time-label {
+        height: var(--grid-slot-height);
+        padding: 0 6px;
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        box-sizing: border-box;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .schedule-grid-shell .room-track {
+        display: grid;
+        grid-auto-flow: row;
+        grid-auto-rows: var(--grid-slot-height);
+        position: relative;
+        min-width: 0;
+        border-right: 1px solid var(--border-color);
+        background-image: repeating-linear-gradient(
+            to bottom,
+            rgba(255, 255, 255, 0.02) 0,
+            rgba(255, 255, 255, 0.02) 1px,
+            transparent 1px,
+            transparent var(--grid-slot-height)
+        );
+    }
+
+    .schedule-grid-shell .event-block {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        box-sizing: border-box;
+        padding: 6px 8px;
+        font-size: 0.75rem;
+        overflow: hidden;
+        border-radius: var(--radius-sm);
+        color: var(--text-primary);
+        box-shadow: var(--shadow);
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+        max-width: 100%;
+        min-width: 0;
+        min-height: 0;
+        align-self: stretch;
+        justify-self: stretch;
+        position: relative;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+
+    .schedule-grid-shell .event-block::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background: linear-gradient(90deg, var(--accent-color) 0%, var(--primary-color) 70%);
+        border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    }
+
+    .schedule-grid-shell .event-block.unscheduled {
+        background: var(--bg-tertiary);
+        border-style: dashed;
+    }
+
+    .schedule-grid-shell .event-block.unscheduled::before {
+        background: var(--text-muted);
+    }
+
+    .schedule-grid-shell .event-title {
+        font-weight: 700;
+        font-size: 0.75rem;
+        line-height: 1.25;
+        padding-top: 2px;
+    }
+
+    .schedule-grid-shell .event-time {
+        font-size: 0.68rem;
+        color: var(--text-secondary);
+        margin-top: 3px;
+    }
+
+    .schedule-grid-shell .event-block:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-hover);
+        border-color: var(--primary-color);
+        cursor: pointer;
+        z-index: 4;
+    }
+
+    .schedule-grid-shell .grid-wrapper::-webkit-scrollbar {
+        height: 12px;
+        width: 12px;
+    }
+
+    .schedule-grid-shell .grid-wrapper::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, var(--accent-color) 0%, var(--primary-dark) 100%);
+        border-radius: var(--radius-sm);
+        border: 2px solid var(--bg-secondary);
+    }
+
+    .schedule-grid-shell .grid-wrapper {
+        scrollbar-width: thin;
+        scrollbar-color: var(--accent-color) transparent;
+    }
+
+    /* Modal — matches schedule_detail list view (sibling of shell, not nested) */
+    .schedule-modal#event-modal {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 2000;
+    }
+
+    .schedule-modal#event-modal.is-open {
+        display: flex;
+    }
+
+    .schedule-modal#event-modal .schedule-modal-card {
+        width: min(720px, 100%);
+        background: var(--bg-secondary);
+        border-radius: var(--radius);
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow-hover);
+        overflow: hidden;
+    }
+
+    .schedule-modal#event-modal .schedule-modal-header {
+        padding: 1.25rem 1.5rem 0.75rem;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        align-items: start;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .schedule-modal#event-modal .schedule-modal-title {
+        margin: 0;
+        font-size: 1.25rem;
+        color: var(--text-primary);
+    }
+
+    .schedule-modal#event-modal .schedule-modal-close {
+        background: transparent;
+        border: none;
+        color: var(--text-muted);
+        font-size: 1.25rem;
+        cursor: pointer;
+    }
+
+    .schedule-modal#event-modal .schedule-modal-body {
+        padding: 1rem 1.5rem 1.5rem;
+        color: var(--text-secondary);
+        display: grid;
+        gap: 0.75rem;
+    }
+
+    .schedule-modal#event-modal .schedule-modal-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+    }
+
+    .schedule-modal#event-modal .schedule-modal-meta span {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        background: var(--bg-tertiary);
+        padding: 0.3rem 0.6rem;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border-color);
+    }
+
+    .schedule-modal#event-modal .schedule-modal-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .schedule-modal#event-modal .schedule-modal-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.45rem 0.85rem;
+        border-radius: var(--radius-sm);
+        background: rgba(0, 212, 255, 0.2);
+        color: var(--text-primary);
+        text-decoration: none;
+        font-weight: 700;
+        border: 1px solid var(--border-color);
+    }
+
+    .schedule-modal#event-modal .schedule-modal-link:hover {
+        border-color: var(--accent-color);
+    }
+
+    @media (max-width: 720px) {
+        .schedule-grid-shell .schedule-hero h1 {
+            font-size: 1.9rem;
+        }
+
+        .schedule-grid-shell .schedule-tabs {
+            margin-left: 0;
+            overflow-x: auto;
+            flex-wrap: nowrap;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="schedule-grid-shell schedule-shell"
+    data-source-url="{{ source_url|default:'' }}"
+    data-source-type="{{ source_type|default:'' }}">
+    <div class="schedule-hero">
+        <div>
+            <div class="schedule-kicker">Convention schedule</div>
+            <h1>{{ title }}</h1>
+            <div class="schedule-meta">
+                {% if events_count %}
+                <span><i class="bi bi-calendar3"></i>{{ events_count }} events</span>
+                {% endif %}
+                {% if timezone_label %}
+                <span><i class="bi bi-clock"></i>{{ timezone_label }}</span>
+                {% endif %}
+                <div class="schedule-actions">
+                    {% if source_type != 'local' and source_url %}
+                    <a class="schedule-link" href="{{ source_url }}" target="_blank" rel="noopener">
+                        <i class="bi bi-box-arrow-up-right"></i>
+                        {% if source_type == 'guidebook' %}
+                        View on Guidebook
+                        {% elif source_type == 'sessionize' %}
+                        View on Sessionize
+                        {% elif source_type == 'pretalx' %}
+                        View on Pretalx
+                        {% elif source_type == 'furconnect' %}
+                        View on FurConnect
+                        {% elif source_type == 'sched' %}
+                        View on Sched
+                        {% endif %}
+                    </a>
+                    {% endif %}
+                    <a class="schedule-link" href="{% url 'schedule_view' slug %}">
+                        <i class="bi bi-list-ul"></i>
+                        List view
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="schedule-divider"></div>
+
+    <div class="schedule-tabs" id="day-tabs" role="tablist" aria-label="Schedule days"></div>
+
+    <div id="grid" class="grid-wrapper" style="height: min(700px, 72vh);">
+        <div class="grid-inner" id="grid-inner">
+            <div class="time-column" id="time-column"></div>
+            <div class="rooms-row" id="rooms-row"></div>
+            <div class="timeline" id="timeline"></div>
+        </div>
+    </div>
+</div>
+
+<div class="schedule-modal" id="event-modal" aria-hidden="true">
+    <div class="schedule-modal-card" role="dialog" aria-modal="true" aria-labelledby="event-modal-title">
+        <div class="schedule-modal-header">
+            <h2 class="schedule-modal-title" id="event-modal-title"></h2>
+            <button class="schedule-modal-close" id="event-modal-close" type="button" aria-label="Close">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="schedule-modal-body">
+            <div class="schedule-modal-meta" id="event-modal-meta"></div>
+            <div id="event-modal-desc"></div>
+            <div class="schedule-modal-actions" id="event-modal-actions"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    const days = {{ days_data|safe }};
+    const gridShell = document.querySelector('.schedule-grid-shell');
+    const shellStyles = gridShell ? getComputedStyle(gridShell) : null;
+    const scheduleSource = (gridShell?.dataset.sourceType || '').toLowerCase();
+    const scheduleSourceUrl = gridShell?.dataset.sourceUrl || '';
+
+    if (!days || !days.length) {
+        document.getElementById('grid-inner').innerHTML =
+            '<div style="padding:2rem;text-align:center;color:var(--text-muted);font-weight:600;">No schedule data available.</div>';
+        return;
+    }
+
+    const dayTabs = document.getElementById('day-tabs');
+    days.forEach((d, i) => {
+        const b = document.createElement('button');
+        b.className = 'schedule-tab' + (i === 0 ? ' is-active' : '');
+        b.type = 'button';
+        b.textContent = d.label;
+        b.dataset.index = i;
+        b.addEventListener('click', () => setDay(parseInt(b.dataset.index, 10)));
+        dayTabs.appendChild(b);
+    });
+
+    function setDay(idx) {
+        document.querySelectorAll('.schedule-tab').forEach(el => {
+            el.classList.toggle('is-active', parseInt(el.dataset.index, 10) === idx);
+        });
+        renderDay(days[idx]);
+    }
+
+    function renderDay(day) {
+        const rooms = day.rooms.length ? day.rooms : ['Main'];
+        const start_min = day.start_min;
+        const end_min = day.end_min;
+        const total = Math.max(30, end_min - start_min);
+        const headerOffset = shellStyles
+            ? parseInt(shellStyles.getPropertyValue('--grid-room-header-height'), 10) || 48
+            : 48;
+        const slotMinutes = shellStyles
+            ? parseInt(shellStyles.getPropertyValue('--grid-slot-minutes'), 10) || 15
+            : 15;
+        const slotHeight = shellStyles
+            ? parseInt(shellStyles.getPropertyValue('--grid-slot-height'), 10) || 32
+            : 32;
+        const roomKey = (value) => String(value || '').trim().toLowerCase();
+        const gridInner = document.getElementById('grid-inner');
+        const timeCol = document.getElementById('time-column');
+        const roomsRow = document.getElementById('rooms-row');
+        const timeline = document.getElementById('timeline');
+
+        timeCol.innerHTML = '';
+        roomsRow.innerHTML = '';
+        timeline.innerHTML = '';
+
+        const timeColW = parseInt(getComputedStyle(timeCol).width, 10) || 60;
+        const wrapper = document.getElementById('grid');
+        const availWidth = Math.max(800, wrapper.clientWidth - timeColW);
+        const colW = Math.max(140, Math.floor(availWidth / rooms.length));
+        const slotCount = Math.max(1, Math.ceil(total / slotMinutes));
+        const totalHeight = Math.ceil(slotCount * slotHeight);
+
+        gridInner.style.gridTemplateColumns = timeColW + 'px minmax(0, 1fr)';
+        gridInner.style.gridTemplateRows = headerOffset + 'px auto';
+        gridInner.style.width = '100%';
+        gridInner.style.height = ((slotCount + 1) * slotHeight + headerOffset) + 'px';
+        timeCol.style.gridTemplateRows = `repeat(${slotCount + 1}, ${slotHeight}px)`;
+        roomsRow.style.gridTemplateColumns = `repeat(${rooms.length}, minmax(${colW}px, 1fr))`;
+        timeline.style.gridTemplateColumns = `repeat(${rooms.length}, minmax(${colW}px, 1fr))`;
+        timeline.style.height = totalHeight + 'px';
+
+        const roomLookup = new Map();
+        rooms.forEach((room, index) => roomLookup.set(roomKey(room), index));
+        const blockInset = 2;
+
+        for (let step = 0; step <= slotCount; step += 1) {
+            const t = start_min + (step * slotMinutes);
+            const label = document.createElement('div');
+            label.className = 'time-label';
+            label.style.gridRow = String(step + 1);
+            const minutesInDay = ((t % 1440) + 1440) % 1440;
+            const hour24 = Math.floor(minutesInDay / 60);
+            const mm = minutesInDay % 60;
+            const hour12 = (hour24 % 12) || 12;
+            const suffix = hour24 < 12 ? 'AM' : 'PM';
+            label.textContent = hour12 + ':' + (mm === 0 ? '00' : (mm < 10 ? '0' + mm : mm)) + ' ' + suffix;
+            timeCol.appendChild(label);
+        }
+
+        rooms.forEach((r, idx) => {
+            const rh = document.createElement('div');
+            rh.className = 'room-header';
+            rh.style.gridColumn = String(idx + 1);
+            rh.textContent = r;
+            roomsRow.appendChild(rh);
+        });
+
+        rooms.forEach((room, roomIndex) => {
+            const roomEvents = (day.events || []).filter(ev => roomKey(ev.location) === roomKey(room));
+            const timedEvents = roomEvents
+                .filter(ev => ev.start_min != null && ev.end_min != null)
+                .sort((a, b) => (a.start_min - b.start_min) || (a.end_min - b.end_min));
+            const unscheduledEvents = roomEvents.filter(ev => ev.start_min == null || ev.end_min == null);
+
+            const track = document.createElement('div');
+            track.className = 'room-track';
+            track.style.gridColumn = String(roomIndex + 1);
+            track.style.gridTemplateRows = `repeat(${slotCount}, ${slotHeight}px)`;
+
+            const laneEnds = [];
+            const laneAssignments = [];
+            timedEvents.forEach(ev => {
+                let lane = laneEnds.findIndex(endMin => endMin <= ev.start_min);
+                if (lane === -1) {
+                    lane = laneEnds.length;
+                    laneEnds.push(ev.end_min);
+                } else {
+                    laneEnds[lane] = ev.end_min;
+                }
+                laneAssignments.push({ ev, lane });
+            });
+
+            const laneCount = Math.max(1, laneEnds.length);
+
+            laneAssignments.forEach(({ ev, lane }) => {
+                const startRow = Math.max(1, Math.floor((ev.start_min - start_min) / slotMinutes) + 1);
+                const endRow = Math.max(startRow + 1, Math.ceil((ev.end_min - start_min) / slotMinutes) + 1);
+                const el = createEventBlock(ev, day, lane + 1, startRow, endRow, blockInset);
+                track.appendChild(el);
+            });
+
+            unscheduledEvents.forEach((ev, idx) => {
+                const el = createEventBlock(ev, day, laneCount + idx + 1, 1, 3, blockInset, true);
+                track.appendChild(el);
+            });
+
+            timeline.appendChild(track);
+        });
+    }
+
+    function createEventBlock(ev, day, gridColumn, startRow, endRow, blockInset, unscheduled) {
+        const el = document.createElement('div');
+        el.className = 'event-block' + (unscheduled ? ' unscheduled' : '');
+        el.style.gridColumn = String(gridColumn);
+        el.style.gridRow = `${startRow} / ${endRow}`;
+        el.style.margin = '2px';
+        el.style.width = `calc(100% - ${blockInset * 2}px)`;
+        el.innerHTML =
+            '<div class="event-title">' + escapeHtml(ev.name || 'Untitled') + '</div>' +
+            '<div class="event-time">' + escapeHtml(ev.time_range || '') + '</div>';
+        el.dataset.name = ev.name || 'Untitled';
+        el.dataset.timeRange = ev.time_range || '';
+        el.dataset.location = ev.location || '';
+        el.dataset.description = ev.description || '';
+        el.dataset.organizer = ev.organizer || '';
+        el.dataset.day = day.label || '';
+        el.dataset.url = ev.url || '';
+        return el;
+    }
+
+    function escapeHtml(s) {
+        return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function sourceLabel() {
+        if (scheduleSource === 'guidebook') return 'View on Guidebook';
+        if (scheduleSource === 'sessionize') return 'View on Sessionize';
+        if (scheduleSource === 'pretalx') return 'View on Pretalx';
+        if (scheduleSource === 'furconnect') return 'View on FurConnect';
+        if (scheduleSource === 'local') return '';
+        return 'View on Sched';
+    }
+
+    function openEventModal(data) {
+        document.getElementById('event-modal-title').textContent = data.name || 'Untitled';
+        const meta = document.getElementById('event-modal-meta');
+        meta.innerHTML = [
+            data.time_range ? `<span><i class="bi bi-clock"></i>${escapeHtml(data.time_range)}</span>` : '',
+            data.location ? `<span><i class="bi bi-geo-alt"></i>${escapeHtml(data.location)}</span>` : '',
+            data.organizer ? `<span><i class="bi bi-person"></i>${escapeHtml(data.organizer)}</span>` : '',
+            data.day ? `<span><i class="bi bi-calendar3"></i>${escapeHtml(data.day)}</span>` : '',
+        ].filter(Boolean).join('');
+
+        document.getElementById('event-modal-desc').textContent = data.description || 'No description available.';
+
+        const actions = document.getElementById('event-modal-actions');
+        actions.innerHTML = '';
+        const href = data.url || scheduleSourceUrl || '';
+        const label = sourceLabel();
+        if (href && label) {
+            const link = document.createElement('a');
+            link.className = 'schedule-modal-link';
+            link.href = href;
+            link.target = '_blank';
+            link.rel = 'noopener';
+            link.innerHTML = `<i class="bi bi-box-arrow-up-right"></i> ${label}`;
+            actions.appendChild(link);
+        }
+
+        const modal = document.getElementById('event-modal');
+        modal.classList.add('is-open');
+        modal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeEventModal() {
+        const modal = document.getElementById('event-modal');
+        modal.classList.remove('is-open');
+        modal.setAttribute('aria-hidden', 'true');
+    }
+
+    document.getElementById('event-modal-close').addEventListener('click', closeEventModal);
+    document.getElementById('event-modal').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('event-modal')) closeEventModal();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && document.getElementById('event-modal').classList.contains('is-open')) {
+            closeEventModal();
+        }
+    });
+
+    document.getElementById('timeline').addEventListener('click', (ev) => {
+        const el = ev.target.closest && ev.target.closest('.event-block');
+        if (!el) return;
+        openEventModal({
+            name: el.dataset.name,
+            time_range: el.dataset.timeRange,
+            location: el.dataset.location,
+            description: el.dataset.description,
+            organizer: el.dataset.organizer,
+            day: el.dataset.day,
+            url: el.dataset.url,
+        });
+    });
+
+    setDay(0);
+})();
+</script>
+{% endblock %}

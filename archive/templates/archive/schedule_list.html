@@ -1,0 +1,76 @@
+{% extends 'archive/base.html' %}
+{% block title %}Convention Schedules{% endblock %}
+{% block extra_css %}
+<style>
+  .schedule-list-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    margin-top: 1.5rem;
+  }
+  .schedule-year-card {
+    background: var(--bg-secondary);
+    border-radius: var(--radius);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow);
+    display: block;
+    color: inherit;
+    text-decoration: none;
+    padding: 2rem;
+    margin-bottom: 1rem;
+  }
+  .schedule-year-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-hover);
+    border-color: var(--primary-color);
+  }
+  .schedule-year-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.75rem;
+  }
+  .schedule-meta {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  .schedule-link-btn {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-sm);
+    background: var(--primary-color);
+    color: #fff;
+    text-decoration: none;
+    font-size: 1rem;
+    margin-top: 0.5rem;
+    transition: background 0.2s;
+    border: none;
+  }
+  .schedule-link-btn:hover {
+    background: var(--accent-color);
+    color: #fff;
+  }
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">
+    <i class="bi bi-calendar-event"></i>
+    {{ convention.name }} Schedules
+  </h1>
+</div>
+<div class="schedule-list-grid">
+  {% for schedule in schedules %}
+    <div class="schedule-year-card">
+      <div class="schedule-year-title">Year: {{ schedule.year }}</div>
+      <div class="schedule-meta">{{ schedule.description }}</div>
+      <a href="{% url 'schedule_view' slug=schedule.route_slug %}" class="schedule-link-btn">View Schedule</a>
+    </div>
+  {% empty %}
+    <div>No schedules found for this convention.</div>
+  {% endfor %}
+</div>
+{% endblock %}

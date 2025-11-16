@@ -1,0 +1,18 @@
+<!-- Telegram Chat Widget Template -->
+
+{% load static %}
+
+<!-- Telegram Widget Styles -->
+<link rel="stylesheet" href="{% static 'telegram-widget.css' %}">
+
+<!-- Telegram Widget Script config (safe defaults if context not provided) -->
+<script>
+  window.telegramWidgetConfig = {
+    apiUrl: "{{ api_url|default:''|escapejs }}",
+    limit: {{ limit|default:100 }}
+  };
+  if (!window.telegramWidgetConfig.apiUrl) {
+    window.telegramWidgetConfig.apiUrl = "{% url 'internal_telegram_messages_proxy' %}";
+  }
+</script>
+<script src="{% static 'telegram-widget.js' %}?v=20250609"></script>

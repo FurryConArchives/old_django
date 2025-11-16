@@ -1,0 +1,271 @@
+{% extends 'archive/admin/base_admin.html' %}
+{% load static %}
+{% block title %}App Keys - Admin{% endblock %}
+{% block extra_css %}
+<style>
+    .appkeys-layout {
+        display: grid;
+        grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
+        gap: 1.5rem;
+        align-items: start;
+    }
+    .appkeys-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    .appkey-card {
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius);
+        padding: 1.1rem 1.2rem;
+    }
+    .appkey-card.is-inactive {
+        opacity: 0.7;
+    }
+    .appkey-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        align-items: flex-start;
+        margin-bottom: 0.75rem;
+    }
+    .appkey-title {
+        font-weight: 700;
+        color: var(--text-primary);
+        font-size: 1.05rem;
+    }
+    .appkey-meta {
+        color: var(--text-muted);
+        font-size: 0.85rem;
+        margin-top: 0.2rem;
+    }
+    .appkey-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        margin: 0.75rem 0;
+    }
+    .tag-badge.scope-api { color: var(--accent-color); border-color: rgba(0, 212, 255, 0.4); }
+    .tag-badge.scope-dash { color: var(--success-color); border-color: rgba(0, 204, 102, 0.4); }
+    .appkey-secret {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.82rem;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-sm);
+        padding: 0.55rem 0.75rem;
+        overflow: hidden;
+    }
+    .appkey-secret .key-mask,
+    .appkey-secret .key-value {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .appkey-secret .key-value { display: none; color: var(--text-primary); }
+    .appkey-secret .key-mask { color: var(--text-muted); letter-spacing: 0.12em; }
+    .appkey-card:hover .appkey-secret .key-value,
+    .appkey-card:focus-within .appkey-secret .key-value { display: block; }
+    .appkey-card:hover .appkey-secret .key-mask,
+    .appkey-card:focus-within .appkey-secret .key-mask { display: none; }
+    .appkey-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        margin-top: 0.85rem;
+    }
+    .scope-group + .scope-group { margin-top: 0.85rem; }
+    .scope-group-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+        margin-bottom: 0.4rem;
+    }
+    .scope-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+    }
+    .scope-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.35rem 0.7rem;
+        border: 1px solid var(--border-color);
+        border-radius: 999px;
+        background: var(--bg-primary);
+        cursor: pointer;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+    }
+    .scope-chip input { accent-color: var(--accent-color); }
+    .scope-chip:has(input:checked) {
+        border-color: var(--accent-color);
+        color: var(--accent-color);
+        background: rgba(0, 212, 255, 0.08);
+    }
+    .appkey-edit {
+        margin-top: 0.85rem;
+        padding-top: 0.85rem;
+        border-top: 1px solid var(--border-color);
+    }
+    .appkey-edit summary {
+        cursor: pointer;
+        color: var(--accent-color);
+        font-weight: 600;
+        font-size: 0.9rem;
+        list-style: none;
+    }
+    .appkey-edit summary::-webkit-details-marker { display: none; }
+    @media (max-width: 980px) {
+        .appkeys-layout { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+{% block content %}
+{% if message %}
+<div class="alert alert-info" style="margin-bottom: 1.25rem;">
+    <i class="bi bi-info-circle-fill"></i>
+    {{ message }}
+</div>
+{% endif %}
+
+<div class="appkeys-layout">
+    <div class="card">
+        <h3><i class="bi bi-plus-circle"></i> Create app key</h3>
+        <p class="helptext" style="margin: -0.75rem 0 1.25rem;">Anonymous traffic is 1 request per minute. A key can raise that limit. Dashboard access is not rate limited.</p>
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="create">
+            <div class="form-group">
+                <label for="create-name">Name</label>
+                <input id="create-name" class="form-control" name="name" placeholder="android-app or Midwest FurFest dashboard">
+            </div>
+            <div class="form-group">
+                <label for="create-convention">Convention</label>
+                <select id="create-convention" class="form-control" name="convention">
+                    <option value="">None</option>
+                    {% for convention in conventions %}
+                    <option value="{{ convention.id }}">{{ convention.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Scopes</label>
+                {% for group_label, choices in scope_groups %}
+                <div class="scope-group">
+                    <div class="scope-group-label">{{ group_label }}</div>
+                    <div class="scope-grid">
+                        {% for value, label in choices %}
+                        <label class="scope-chip">
+                            <input type="checkbox" name="scopes" value="{{ value }}">
+                            {{ label }}
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="form-group">
+                <label for="create-rate">API requests per minute</label>
+                <input id="create-rate" class="form-control" type="number" min="1" name="rate_per_minute" placeholder="Blank = unlimited">
+            </div>
+            <button class="btn btn-success" type="submit"><i class="bi bi-key"></i> Create app key</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h3><i class="bi bi-key"></i> Existing keys</h3>
+        <div class="appkeys-list">
+            {% for token in tokens %}
+            <article class="appkey-card{% if not token.active %} is-inactive{% endif %}" tabindex="0">
+                <div class="appkey-top">
+                    <div>
+                        <div class="appkey-title">{{ token.name|default:"Untitled key" }}</div>
+                        <div class="appkey-meta">
+                            {{ token.convention.name|default:"No convention" }}
+                            · {{ token.created_at|date:"M j, Y" }}
+                            · {% if token.active %}Active{% else %}Inactive{% endif %}
+                            · {% if token.rate_per_minute %}{{ token.rate_per_minute }}/min{% else %}Unlimited{% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="appkey-badges">
+                    {% for scope in token.scopes %}
+                        {% if scope == 'api' %}
+                        <span class="tag-badge scope-api">Full API</span>
+                        {% elif scope == 'con-dashboard' %}
+                        <span class="tag-badge scope-dash">Dashboard</span>
+                        {% else %}
+                        <span class="tag-badge">{{ scope }}</span>
+                        {% endif %}
+                    {% empty %}
+                        <span class="tag-badge">No scopes</span>
+                    {% endfor %}
+                </div>
+                <div class="appkey-secret" title="Hover or focus to reveal">
+                    <i class="bi bi-eye-slash"></i>
+                    <span class="key-mask">Hover to reveal key</span>
+                    <span class="key-value">{{ token.key }}</span>
+                </div>
+                <div class="appkey-actions">
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="id" value="{{ token.id }}">
+                        <button class="btn btn-small btn-secondary" name="action" value="regenerate">Regenerate</button>
+                    </form>
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="id" value="{{ token.id }}">
+                        {% if token.active %}
+                        <button class="btn btn-small btn-danger" name="action" value="deactivate">Deactivate</button>
+                        {% else %}
+                        <button class="btn btn-small btn-success" name="action" value="activate">Activate</button>
+                        {% endif %}
+                    </form>
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="id" value="{{ token.id }}">
+                        <button class="btn btn-small btn-danger" name="action" value="delete" onclick="return confirm('Delete this app key? This cannot be undone.')">Delete</button>
+                    </form>
+                </div>
+                <details class="appkey-edit">
+                    <summary>Edit scopes and rate</summary>
+                    <form method="post" style="margin-top: 0.9rem;">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="update">
+                        <input type="hidden" name="id" value="{{ token.id }}">
+                        <input type="hidden" name="convention" value="{{ token.convention_id|default:'' }}">
+                        {% for group_label, choices in scope_groups %}
+                        <div class="scope-group">
+                            <div class="scope-group-label">{{ group_label }}</div>
+                            <div class="scope-grid">
+                                {% for value, label in choices %}
+                                <label class="scope-chip">
+                                    <input type="checkbox" name="scopes" value="{{ value }}" {% if value in token.resolved_scopes %}checked{% endif %}>
+                                    {{ label }}
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                        <div class="form-group" style="margin-top: 1rem;">
+                            <label>API requests per minute</label>
+                            <input class="form-control" type="number" min="1" name="rate_per_minute" value="{{ token.rate_per_minute|default:'' }}" placeholder="Unlimited">
+                        </div>
+                        <button class="btn btn-small btn-secondary" type="submit">Save changes</button>
+                    </form>
+                </details>
+            </article>
+            {% empty %}
+            <p class="helptext">No app keys yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

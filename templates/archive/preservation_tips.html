@@ -1,0 +1,214 @@
+{% extends "archive/base.html" %}
+{% block extra_css %}
+<style>
+    .tips-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .tips-header {
+        text-align: center;
+        margin-bottom: 4rem;
+        padding-bottom: 2rem;
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    .tips-header h1 {
+        font-size: clamp(1.75rem, 4vw, 2.5rem);
+        font-weight: 800;
+        background: linear-gradient(135deg, var(--text-primary), var(--accent-color));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        letter-spacing: -0.5px;
+        flex-wrap: wrap;
+    }
+
+    .tips-header h1 i {
+        color: var(--accent-color);
+        font-size: clamp(1.75rem, 4vw, 2.5rem);
+        -webkit-text-fill-color: var(--accent-color);
+        transition: all 0.3s ease;
+    }
+
+    .tips-header h1:hover i {
+        transform: rotate(8deg) scale(1.1);
+    }
+
+    .tips-header p {
+        color: var(--text-secondary);
+        font-size: 1.05rem;
+        font-weight: 500;
+        max-width: 700px;
+        margin: 0 auto;
+    }
+
+    .preservation-section-card {
+        background: var(--bg-secondary);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 2.5rem;
+        margin-bottom: 2rem;
+        border: 1px solid var(--border-color);
+        transition: box-shadow 0.3s, border-color 0.3s, transform 0.3s;
+    }
+
+    .preservation-section-card:hover {
+        box-shadow: var(--shadow-hover);
+        border-color: var(--primary-color);
+        transform: translateY(-4px);
+    }
+
+    .section-heading {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .section-heading i.bi {
+        color: var(--accent-color);
+        font-size: 1.35rem;
+        transition: all 0.3s ease;
+        vertical-align: middle;
+        line-height: 1;
+        transform-origin: center;
+    }
+
+    .preservation-section-card:hover .section-heading i.bi {
+        transform: rotate(8deg) scale(1.1);
+    }
+
+    .section-heading h2 {
+        color: var(--text-primary);
+        font-size: 1.3rem;
+        margin: 0;
+        letter-spacing: 0.2px;
+    }
+
+    .preservation-section-card p,
+    .preservation-section-card li {
+        color: var(--text-secondary);
+        line-height: 1.8;
+    }
+
+    .preservation-section-card ul {
+        margin: 0 0 1rem 1.5rem;
+    }
+
+    .preservation-section-card p:last-child {
+        margin-bottom: 0;
+    }
+
+    .preservation-section-card.centered {
+        text-align: center;
+    }
+
+    .preservation-section-card.centered .section-heading {
+        justify-content: center;
+    }
+
+    .preservation-section-card.centered p {
+        max-width: 700px;
+        margin: 0 auto;
+    }
+
+    @media (max-width: 768px) {
+        .tips-header {
+            margin-bottom: 2.5rem;
+            padding-bottom: 1.5rem;
+        }
+
+        .tips-header h1 {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .preservation-section-card {
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="tips-container">
+<div class="tips-header">
+    <h1>
+        <i class="bi bi-journal-bookmark"></i>
+        Preservation Tips
+    </h1>
+    <p>How to protect, digitize, and archive furry convention conbooks and materials for future generations.</p>
+</div>
+
+<div class="preservation-section-card">
+    <div class="section-heading">
+        <i class="bi bi-archive"></i>
+        <h2>Why Save Conbooks?</h2>
+    </div>
+    <ul>
+           <li>Conbooks are the black box of our community—primary sources for future historians.</li>
+           <li>They record who we were, what we built, and what mattered to us.</li>
+           <li>Most are rare, fragile, and easily lost to time or neglect.</li>
+            <li>The majority of leftover copies are usually thrown out instead of given away, making surviving originals even rarer.</li>
+    </ul>
+    <p>Every copy matters. Every year matters. Every page is history.</p>
+</div>
+
+<div class="preservation-section-card">
+    <div class="section-heading">
+        <i class="bi bi-shield-check"></i>
+        <h2>How to Preserve</h2>
+    </div>
+    <ul>
+        <li><strong>Store in a cool, dry place:</strong> Avoid attics, basements, and direct sunlight.</li>
+        <li><strong>Keep flat and supported:</strong> Store books upright or flat, not slanted or bent.</li>
+        <li><strong>Handle with clean hands:</strong> Oils and dirt can damage pages and covers.</li>
+        <li><strong>Watch for rust:</strong> Staples can rust and stain paper—consider archival sleeves or polyester strips.</li>
+        <li><strong>Digitize when possible:</strong> Scan or photograph rare or damaged books to preserve their content.</li>
+    </ul>
+</div>
+
+<div class="preservation-section-card">
+    <div class="section-heading">
+        <i class="bi bi-upload"></i>
+        <h2>Donating & Sharing</h2>
+    </div>
+    <ul>
+        <li>Have a rare or old conbook? Consider donating or lending it to the archive for digitization.</li>
+        <li>Even a single copy can fill a gap in fandom history.</li>
+        <li>Contact us for safe donation, scanning, or return options.</li>
+    </ul>
+</div>
+
+<div class="preservation-section-card">
+    <div class="section-heading">
+        <i class="bi bi-lightbulb"></i>
+        <h2>Quick Tips</h2>
+    </div>
+    <ul>
+        <li>Run a staffed archive intake table with clear signage, such as <em>"Archive Your Conbook Here."</em></li>
+        <li>Use a simple intake log (event, year, condition, donor) so materials keep their context.</li>
+        <li>Coordinate post-event pickup with venue or hotel staff so abandoned books are recovered quickly.</li>
+        <li>Offer low-friction incentives like raffle entries or donor recognition to boost participation.</li>
+        <li>Review your own collection annually and digitize or sleeve any at-risk books.</li>
+    </ul>
+</div>
+
+<div class="preservation-section-card centered">
+    <div class="section-heading">
+        <i class="bi bi-heart"></i>
+        <h2>Every Page is History</h2>
+    </div>
+    <p>If you have a stack of old conbooks, you’re a guardian of fandom culture. Don’t let that legacy rot in an attic or vanish in a dumpster—help us preserve it for the future.</p>
+</div>
+</div>
+
+{% endblock %}

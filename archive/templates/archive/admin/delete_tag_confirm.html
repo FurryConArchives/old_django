@@ -1,0 +1,35 @@
+{% extends 'archive/admin/base_admin.html' %}
+
+{% block title %}Delete Tag - Admin{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 600px; margin: 0 auto;">
+    <div style="text-align: center; margin-bottom: 1.5rem;">
+        <div style="font-size: 3rem; color: var(--error-color);"><i class="bi bi-exclamation-triangle"></i></div>
+        <h3 style="color: var(--error-color); margin-top: 1rem;">Confirm Tag Deletion</h3>
+    </div>
+    
+    <p style="margin-bottom: 1.5rem; text-align: center; color: var(--text-secondary);">
+        Are you sure you want to delete the tag "<strong style="color: var(--text-primary);">{{ tag.name }}</strong>"?
+    </p>
+    
+    <div style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: var(--radius-sm); margin-bottom: 1.5rem; border: 1px solid var(--border-color);">
+        <p style="margin-bottom: 0.75rem;"><strong style="color: var(--text-primary);">Tag Name:</strong> <span style="color: var(--text-secondary);">{{ tag.name }}</span></p>
+        {% if tag.description %}
+            <p style="margin-bottom: 0.75rem;"><strong style="color: var(--text-primary);">Description:</strong> <span style="color: var(--text-secondary);">{{ tag.description }}</span></p>
+        {% endif %}
+        <p><strong style="color: var(--text-primary);">Used in:</strong> <span style="color: var(--text-secondary);">{{ tag.documents.count }} document(s)</span></p>
+    </div>
+    
+    <p style="margin-bottom: 1.5rem; text-align: center; color: var(--text-muted);">
+        Note: Deleting this tag will remove it from all associated documents.
+    </p>
+    
+    <form method="post" style="display: flex; gap: 1rem; justify-content: center;">
+        {% csrf_token %}
+        <a href="{% url 'admin_tags' %}" class="btn btn-secondary"><i class="bi bi-x-circle"></i> Cancel</a>
+        <button type="submit" class="btn btn-danger"><i class="bi bi-trash"></i> Yes, Delete Tag</button>
+    </form>
+</div>
+{% endblock %}
+

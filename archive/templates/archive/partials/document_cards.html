@@ -1,0 +1,76 @@
+{% load static %}
+{% for document in page_obj %}
+<div class="document-card">
+    <a href="{% url 'document_detail' document.slug %}" class="document-thumbnail">
+        <img data-doc-thumb="1" data-original-src="{% url 'pdf_page_image' document.slug 1 %}" src="{% static 'archive/placeholder.jpg' %}" alt="{{ document.title }} - Page 1" loading="lazy">
+        <div class="document-type-badge">
+            {% if document.is_scanned %}
+                Scanned File
+            {% else %}
+                Source File
+            {% endif %}
+        </div>
+    </a>
+
+    <div class="document-content">
+        <h3 class="document-title">
+            <a href="{% url 'document_detail' document.slug %}">{{ document.title }}</a>
+        </h3>
+
+        <div class="document-meta">
+            {% if document.year %}
+            <div class="meta-item">
+                <i class="bi bi-calendar"></i>
+                <span>{{ document.year }}</span>
+            </div>
+            {% endif %}
+            {% if document.convention_name %}
+            <div class="meta-item">
+                <i class="bi bi-building"></i>
+                <span>{{ document.convention_name }}</span>
+            </div>
+            {% endif %}
+            {% if document.page_count %}
+            <div class="meta-item">
+                <i class="bi bi-file-earmark-text"></i>
+                <span>{{ document.page_count }} pages</span>
+            </div>
+            {% endif %}
+            {% if document.file_size_mb %}
+            <div class="meta-item">
+                <i class="bi bi-file-pdf"></i>
+                <span>{{ document.file_size_mb }} MB</span>
+            </div>
+            {% endif %}
+            <div class="meta-item">
+                <i class="bi bi-eye"></i>
+                <span>{{ document.pdf_view_count|default:0 }} views</span>
+            </div>
+        </div>
+
+        {% if document.display_description %}
+        <p class="document-description">{{ document.display_description|truncatechars:500 }}</p>
+        {% endif %}
+
+        {% if document.category %}
+        <div class="document-tags">
+            <a href="{% url 'convention_detail' slug=document.category.slug %}" class="tag">
+                <i class="bi bi-building"></i>
+                {{ document.category.name }}
+            </a>
+        </div>
+        {% endif %}
+
+        <div class="document-actions">
+            <a href="{% url 'document_detail' document.slug %}" class="btn btn-small">
+                <i class="bi bi-eye"></i>
+                View
+            </a>
+            <a href="{% url 'document_download' document.slug %}" class="btn btn-small btn-secondary">
+                <i class="bi bi-download"></i>
+                Download
+            </a>
+        </div>
+    </div>
+</div>
+{% endfor %}

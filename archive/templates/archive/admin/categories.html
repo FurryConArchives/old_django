@@ -1,0 +1,134 @@
+{% extends 'archive/admin/base_admin.html' %}
+
+{% block title %}Manage Categories - Admin{% endblock %}
+
+{% block content %}
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+    <div class="card">
+        <h3 style="margin-bottom: 1rem;">Create New Category</h3>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="{{ form.name.id_for_label }}">Category Name *</label>
+                {{ form.name }}
+                {% if form.name.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.name.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.description.id_for_label }}">Description</label>
+                {{ form.description }}
+                {% if form.description.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.description.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.parent.id_for_label }}">Parent Category</label>
+                {{ form.parent }}
+                <span class="helptext">{{ form.parent.help_text }}</span>
+                {% if form.parent.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.parent.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.order.id_for_label }}">Display Order</label>
+                {{ form.order }}
+                <span class="helptext">{{ form.order.help_text }}</span>
+                {% if form.order.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.order.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.logo_file.id_for_label }}">Logo (4:1 aspect ratio)</label>
+                {{ form.logo_file }}
+                <span class="helptext">{{ form.logo_file.help_text }}</span>
+                {% if form.logo_file.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.logo_file.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+                {{ form.logo }}
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.location.id_for_label }}">Location</label>
+                {{ form.location }}
+                <span class="helptext">{{ form.location.help_text }}</span>
+                {% if form.location.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.location.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+            
+            <button type="submit" class="btn btn-success">Create Category</button>
+        </form>
+    </div>
+    
+    <div class="card">
+        <h3 style="margin-bottom: 1rem;">Existing Categories</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Parent</th>
+                    <th>Location</th>
+                    <th>Order</th>
+                    <th>Documents</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for category in categories %}
+                <tr>
+                    <td><strong>{{ category.name }}</strong></td>
+                    <td>{{ category.parent|default:"-" }}</td>
+                    <td>{{ category.location|default:"-" }}</td>
+                    <td>{{ category.order }}</td>
+                    <td>{{ category.doc_count }}</td>
+                    <td>
+                        <div class="actions">
+                            <a href="{% url 'admin_edit_category' category.id %}" class="btn btn-small btn-primary">Edit</a>
+                            <a href="{% url 'document_list' %}?category={{ category.slug }}" class="btn btn-small btn-secondary" target="_blank">View</a>
+                            <a href="{% url 'admin_delete_category' category.id %}" class="btn btn-small btn-danger">Delete</a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                        No categories yet. Create one using the form on the left.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

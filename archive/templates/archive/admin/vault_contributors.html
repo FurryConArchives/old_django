@@ -1,0 +1,76 @@
+{% extends 'archive/admin/base_admin.html' %}
+
+{% block content %}
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+    <div>
+        <h1 style="margin: 0;">{{ page_title }}</h1>
+        <p style="margin: 0.35rem 0 0; color: var(--text-secondary);">
+            Upload a custom avatar for any vault contributor. Overrides appear on the staff page and The Vault.
+        </p>
+    </div>
+    <a href="{% url 'admin_physical_inventory' %}" class="btn btn-secondary">
+        <i class="bi bi-box-seam"></i> Back to The Vault
+    </a>
+</div>
+
+<div style="background: var(--bg-secondary); border: 2px solid var(--border-color); border-radius: 16px; overflow: hidden;">
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="background: var(--bg-tertiary); text-align: left;">
+                <th style="padding: 1rem;">Contributor</th>
+                <th style="padding: 1rem;">Current Avatar</th>
+                <th style="padding: 1rem;">Override</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for contributor in contributors %}
+            <tr style="border-top: 1px solid var(--border-color);">
+                <td style="padding: 1rem; vertical-align: top;">
+                    <div style="font-weight: 700;">{{ contributor.display_name }}</div>
+                    <div style="color: var(--text-secondary); font-size: 0.9rem;">
+                        {% if contributor.type == 'telegram' %}@{{ contributor.username }}{% else %}Discord ID {{ contributor.username }}{% endif %}
+                    </div>
+                    <div style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.25rem;">
+                        {{ contributor.contributions }} contribution{{ contributor.contributions|pluralize }}
+                    </div>
+                </td>
+                <td style="padding: 1rem; vertical-align: top;">
+                    {% if contributor.avatar_url %}
+                    <img src="{{ contributor.avatar_url }}" alt="{{ contributor.display_name }}"
+                        style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent-color);">
+                    {% else %}
+                    <span style="display: inline-block; width: 48px; height: 48px; border-radius: 50%; background: var(--bg-tertiary); text-align: center; line-height: 48px;">?</span>
+                    {% endif %}
+                    {% if contributor.has_override %}
+                    <div style="font-size: 0.8rem; color: var(--accent-color); margin-top: 0.35rem;">Custom override active</div>
+                    {% endif %}
+                </td>
+                <td style="padding: 1rem; vertical-align: top;">
+                    <form method="post" enctype="multipart/form-data" style="display: grid; gap: 0.75rem; max-width: 320px;">
+                        {% csrf_token %}
+                        <input type="hidden" name="account_type" value="{{ contributor.type }}">
+                        <input type="hidden" name="account_id" value="{{ contributor.username }}">
+                        <input type="file" name="avatar" accept="image/*" class="form-control">
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                <i class="bi bi-upload"></i> Upload Override
+                            </button>
+                            {% if contributor.has_override %}
+                            <button type="submit" name="remove_override" value="1" class="btn btn-secondary btn-sm"
+                                onclick="return confirm('Remove the custom avatar for {{ contributor.display_name|escapejs }}?');">
+                                <i class="bi bi-x-circle"></i> Remove
+                            </button>
+                            {% endif %}
+                        </div>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3" style="padding: 2rem; color: var(--text-secondary);">No vault contributors found yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

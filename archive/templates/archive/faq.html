@@ -1,0 +1,249 @@
+{% extends 'archive/base.html' %}
+
+{% block title %}FAQ - Furry Con Archives{% endblock %}
+
+{% block extra_css %}
+<style>
+    .faq-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .faq-header {
+        text-align: center;
+        margin-bottom: 4rem;
+        padding-bottom: 2rem;
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    .faq-header h1 {
+        font-size: clamp(1.75rem, 4vw, 2.5rem);
+        font-weight: 800;
+        background: linear-gradient(135deg, var(--text-primary), var(--accent-color));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        letter-spacing: -0.5px;
+        flex-wrap: wrap;
+    }
+
+    .faq-header h1 i {
+        color: var(--accent-color);
+        font-size: clamp(1.75rem, 4vw, 2.5rem);
+        -webkit-text-fill-color: var(--accent-color);
+        transition: all 0.3s ease;
+    }
+
+    .faq-header h1:hover i {
+        transform: rotate(8deg) scale(1.1);
+    }
+
+    .faq-header p {
+        color: var(--text-secondary);
+        font-size: 1.05rem;
+        font-weight: 500;
+    }
+
+    .faq-search-box {
+        margin-bottom: 3rem;
+        position: relative;
+    }
+
+    .faq-search-input {
+        width: 100%;
+        padding: 1rem 1.5rem;
+        font-size: 1rem;
+        border: 2px solid var(--border-color);
+        border-radius: var(--radius);
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        transition: all 0.3s ease;
+    }
+
+    .faq-search-input:focus {
+        outline: none;
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+    }
+
+    .faq-search-input::placeholder {
+        color: var(--text-secondary);
+    }
+
+    .faq-item {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius);
+        padding: 2.5rem;
+        margin-bottom: 2rem;
+        box-shadow: var(--shadow);
+        transition: all 0.3s ease;
+    }
+
+    .faq-item.hidden {
+        display: none;
+    }
+
+    .faq-item:hover {
+        box-shadow: var(--shadow-hover);
+        border-color: var(--primary-color);
+        transform: translateY(-4px);
+    }
+
+    .faq-question {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+    }
+
+    .faq-question i {
+        color: var(--accent-color);
+        font-size: 1.35rem;
+        transition: all 0.3s ease;
+    }
+
+    .faq-item:hover .faq-question i {
+        transform: rotate(8deg) scale(1.1);
+    }
+
+    .faq-answer {
+        color: var(--text-secondary);
+        line-height: 1.8;
+        font-size: 0.95rem;
+    }
+
+    .faq-answer p {
+        margin-bottom: 1rem;
+    }
+
+    .faq-answer p:last-child {
+        margin-bottom: 0;
+    }
+
+    .faq-answer ul {
+        margin-left: 1.5rem;
+        color: var(--text-secondary);
+        margin-bottom: 1rem;
+    }
+
+    .faq-answer li {
+        margin-bottom: 0.5rem;
+    }
+
+    .faq-answer a {
+        color: var(--accent-color);
+        text-decoration: none;
+        transition: all 0.3s ease;
+        font-weight: 500;
+    }
+
+    .faq-answer a:hover {
+        color: var(--primary-color);
+        text-decoration: underline;
+    }
+
+    .faq-no-results {
+        text-align: center;
+        padding: 3rem 2rem;
+        color: var(--text-secondary);
+        font-size: 1.1rem;
+    }
+
+    @media (max-width: 768px) {
+        .faq-header {
+            margin-bottom: 2.5rem;
+            padding-bottom: 1.5rem;
+        }
+
+        .faq-header h1 {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .faq-item {
+            padding: 1.25rem;
+        }
+
+        .faq-search-box {
+            margin-bottom: 2rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="faq-container">
+    <div class="faq-header">
+        <h1><i class="bi bi-question-circle"></i> Frequently Asked Questions</h1>
+    </div>
+
+    <div class="faq-search-box">
+        <input type="text" class="faq-search-input" id="faqSearch" placeholder="Search FAQs... (e.g., shipping, preservation, conventions)">
+    </div>
+
+    {% for entry in faq_entries %}
+    <div class="faq-item">
+        <div class="faq-question">
+            <i class="bi bi-{{ entry.icon|default:'question-circle-fill' }}"></i>
+            {{ entry.question }}
+        </div>
+        <div class="faq-answer">
+            {{ entry.answer_html|default:entry.answer|safe }}
+        </div>
+    </div>
+    {% empty %}
+    <p class="faq-no-results">No FAQ entries have been published yet.</p>
+    {% endfor %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('faqSearch');
+    const faqItems = document.querySelectorAll('.faq-item');
+    const container = document.querySelector('.faq-container');
+
+    if (!searchInput) {
+        return;
+    }
+
+    searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase().trim();
+        let visibleCount = 0;
+
+        const existingMessage = container.querySelector('.faq-no-results');
+        if (existingMessage) {
+            existingMessage.remove();
+        }
+
+        faqItems.forEach(item => {
+            const questionText = item.querySelector('.faq-question').textContent.toLowerCase();
+            const answerText = item.querySelector('.faq-answer').textContent.toLowerCase();
+            const combinedText = questionText + ' ' + answerText;
+
+            if (searchTerm === '' || combinedText.includes(searchTerm)) {
+                item.style.display = 'block';
+                visibleCount++;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+
+        if (visibleCount === 0 && searchTerm !== '') {
+            const noResults = document.createElement('div');
+            noResults.className = 'faq-no-results';
+            noResults.textContent = `No results found for "${searchInput.value}". Try searching for keywords like "shipping", "preservation", "conventions", or "donations".`;
+            container.appendChild(noResults);
+        }
+    });
+});
+</script>
+{% endblock %}

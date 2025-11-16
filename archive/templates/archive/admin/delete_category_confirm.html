@@ -1,0 +1,41 @@
+{% extends 'archive/admin/base_admin.html' %}
+
+{% block title %}Delete Category - Admin{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 600px; margin: 0 auto;">
+    <div style="text-align: center; margin-bottom: 1.5rem;">
+        <div style="font-size: 3rem; color: var(--error-color);"><i class="bi bi-exclamation-triangle"></i></div>
+        <h3 style="color: var(--error-color); margin-top: 1rem;">Confirm Category Deletion</h3>
+    </div>
+    
+    <p style="margin-bottom: 1.5rem; text-align: center; color: var(--text-secondary);">
+        Are you sure you want to delete the category "<strong style="color: var(--text-primary);">{{ category.name }}</strong>"?
+    </p>
+    
+    <div style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: var(--radius-sm); margin-bottom: 1.5rem; border: 1px solid var(--border-color);">
+        <p style="margin-bottom: 0.75rem;"><strong style="color: var(--text-primary);">Category Name:</strong> <span style="color: var(--text-secondary);">{{ category.name }}</span></p>
+        {% if category.description %}
+            <p style="margin-bottom: 0.75rem;"><strong style="color: var(--text-primary);">Description:</strong> <span style="color: var(--text-secondary);">{{ category.description }}</span></p>
+        {% endif %}
+        {% if category.parent %}
+            <p style="margin-bottom: 0.75rem;"><strong style="color: var(--text-primary);">Parent:</strong> <span style="color: var(--text-secondary);">{{ category.parent.name }}</span></p>
+        {% endif %}
+        <p style="margin-bottom: 0.75rem;"><strong style="color: var(--text-primary);">Used in:</strong> <span style="color: var(--text-secondary);">{{ category.documents.count }} document(s)</span></p>
+        {% if category.subcategories.count > 0 %}
+            <p style="color: var(--error-color); margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);"><strong>Warning:</strong> This category has {{ category.subcategories.count }} subcategory(ies) that will also be deleted!</p>
+        {% endif %}
+    </div>
+    
+    <p style="margin-bottom: 1.5rem; text-align: center; color: var(--text-muted);">
+        Note: Deleting this category will remove it from all associated documents.
+    </p>
+    
+    <form method="post" style="display: flex; gap: 1rem; justify-content: center;">
+        {% csrf_token %}
+        <a href="{% url 'admin_categories' %}" class="btn btn-secondary"><i class="bi bi-x-circle"></i> Cancel</a>
+        <button type="submit" class="btn btn-danger"><i class="bi bi-trash"></i> Yes, Delete Category</button>
+    </form>
+</div>
+{% endblock %}
+

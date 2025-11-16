@@ -1,0 +1,916 @@
+{% extends 'archive/base.html' %}
+{% load static %}
+{% load humanize %}
+{% block title %}{{ page_title|default:'Convention Dashboard' }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+{% endblock %}
+
+{% block content %}
+<style>
+    .stats-header { margin-bottom: 1.5rem; }
+    .dashboard-header {
+        margin-bottom: 0.9rem;
+    }
+    .dashboard-title {
+        margin: 0 0 0.25rem;
+        line-height: 1.15;
+    }
+    .stats-source {
+        margin-top: 0;
+        margin-bottom: 0.75rem;
+        color: rgba(255,255,255,0.72);
+        font-size: 0.92rem;
+    }
+    .filters-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.6rem;
+        margin-bottom: 1rem;
+    }
+    .filter-input {
+        min-width: 260px;
+        border: 1px solid rgba(0,212,255,0.3);
+        border-radius: 10px;
+        background: rgba(18, 24, 36, 0.92);
+        color: rgba(255,255,255,0.95);
+        padding: 0.55rem 0.7rem;
+    }
+    .filter-btn {
+        border: 1px solid rgba(0,212,255,0.35);
+        background: rgba(0,212,255,0.08);
+        color: rgba(255,255,255,0.92);
+        border-radius: 999px;
+        padding: 0.45rem 0.8rem;
+        font-size: 0.82rem;
+        font-weight: 700;
+        cursor: pointer;
+    }
+    .filter-btn.active {
+        border-color: rgba(0,212,255,0.85);
+        background: rgba(0,212,255,0.2);
+    }
+    .filter-btn.secondary {
+        border-color: rgba(255,255,255,0.25);
+        background: rgba(255,255,255,0.06);
+    }
+    .year-filters-row {
+        margin-top: -0.25rem;
+        margin-bottom: 1.1rem;
+    }
+    .year-filter-label {
+        color: rgba(255,255,255,0.72);
+        font-size: 0.82rem;
+        font-weight: 700;
+        text-transform: none;
+        letter-spacing: 0.02em;
+        margin-right: 0.15rem;
+    }
+    .view-type-badges {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+    }
+    .view-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.5rem 0.9rem;
+        border-radius: 999px;
+        border: 1px solid rgba(0,212,255,0.35);
+        background: rgba(14, 18, 28, 0.9);
+        color: rgba(255,255,255,0.92);
+        font-size: 0.86rem;
+        font-weight: 600;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.22);
+        transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+    .view-badge:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 24px rgba(0,0,0,0.3);
+        background: rgba(18, 24, 36, 0.96);
+    }
+    .view-badge.active {
+        border-color: rgba(0,212,255,0.9);
+        background: linear-gradient(135deg, rgba(0,212,255,0.16), rgba(14, 18, 28, 0.98));
+    }
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .summary-card {
+        background: linear-gradient(180deg, rgba(18, 24, 36, 0.95), rgba(11, 15, 24, 0.95));
+        border: 1px solid rgba(0,212,255,0.22);
+        border-radius: 14px;
+        padding: 1rem 1.1rem;
+        box-shadow: 0 10px 24px rgba(0,0,0,0.22);
+    }
+    .summary-label { color: rgba(255,255,255,0.62); font-size: 0.8rem; margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .summary-value { color: rgba(255,255,255,0.97); font-weight: 800; font-size: 1.75rem; line-height: 1; }
+    .stats-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+        overflow-x: hidden;
+    }
+    .stats-card {
+        background: linear-gradient(180deg, rgba(18, 24, 36, 0.95), rgba(11, 15, 24, 0.95));
+        border: 1px solid rgba(0,212,255,0.22);
+        border-radius: 16px;
+        padding: 1rem 1.15rem;
+        box-shadow: 0 10px 24px rgba(0,0,0,0.22);
+        min-width: 0;
+    }
+    .stats-card > summary {
+        cursor: pointer;
+        list-style: none;
+        font-weight: 700;
+        color: rgba(255,255,255,0.96);
+        margin-bottom: 0.8rem;
+    }
+    .stats-card > summary::-webkit-details-marker { display: none; }
+    .no-chart-data {
+        padding: 3rem 1.5rem;
+        text-align: center;
+        color: rgba(255,255,255,0.68);
+        border: 1px dashed rgba(0,212,255,0.35);
+        background: rgba(0,212,255,0.04);
+        border-radius: 12px;
+        font-size: 0.95rem;
+    }
+    .stats-card-content canvas { max-height: 420px !important; }
+    .chart-legend-fixed {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.7rem 1rem;
+        margin: 0.1rem 0 0.45rem;
+        color: rgba(255,255,255,0.72);
+        font-size: 0.9rem;
+    }
+    .chart-legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+    .chart-legend-swatch {
+        width: 34px;
+        height: 10px;
+        border: 2px solid rgba(0,212,255,0.85);
+        background: rgba(0,212,255,0.12);
+        border-radius: 2px;
+    }
+    .chart-legend-swatch.views {
+        border-color: rgba(255, 72, 72, 0.9);
+        background: rgba(255, 72, 72, 0.16);
+    }
+    .chart-legend-swatch.visits {
+        border-color: rgba(46, 204, 113, 0.92);
+        background: rgba(46, 204, 113, 0.16);
+    }
+    .chart-legend-swatch.bounces {
+        border-color: rgba(255, 208, 64, 0.95);
+        background: rgba(255, 208, 64, 0.18);
+    }
+    .chart-scroll-wrap {
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-x;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+        padding: 0.2rem 0.2rem 0.3rem 0.95rem;
+    }
+    .chart-scroll-wrap canvas {
+        display: block;
+        min-width: 720px;
+        width: auto !important;
+        max-width: none !important;
+        margin-left: 0.35rem;
+    }
+    .chart-layout {
+        display: flex;
+        align-items: stretch;
+        width: 100%;
+        min-width: 0;
+    }
+    .chart-yaxis-wrap {
+        flex: 0 0 72px;
+        width: 72px;
+        min-width: 72px;
+        padding: 0.2rem 0 0.3rem 0;
+        margin-right: 0.25rem;
+        overflow: hidden;
+    }
+    .chart-yaxis-wrap canvas {
+        display: block;
+    }
+    .referer-list { margin: 0; padding: 0; list-style: none; }
+    .referer-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.75rem 0.9rem;
+        border-radius: 12px;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.08);
+        margin-bottom: 0.6rem;
+    }
+    .referer-label { color: rgba(255,255,255,0.9); }
+    .referer-count { color: rgba(0,212,255,0.95); font-weight: 700; }
+    .country-flag {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.47rem;
+        margin-right: 0.4rem;
+        font-size: 1.27rem;
+    }
+    .country-item {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 12px;
+        margin-bottom: 0.75rem;
+        overflow: hidden;
+    }
+    .country-header-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.85rem 0.9rem;
+        cursor: pointer;
+        color: rgba(255,255,255,0.94);
+    }
+    .cities-list-wrapper {
+        padding: 0 0.9rem 0.85rem;
+        display: none;
+    }
+    .cities-list-wrapper.expanded {
+        display: block;
+    }
+    .city-item {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.55rem 0.7rem;
+        border-radius: 10px;
+        background: rgba(255,255,255,0.03);
+        color: rgba(255,255,255,0.88);
+        margin-top: 0.5rem;
+    }
+    .city-name {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+    .state-flag {
+        width: 1.46rem;
+        height: 1.02rem;
+        border-radius: 0.15rem;
+        object-fit: cover;
+        box-shadow: 0 0 0 1px rgba(255,255,255,0.2);
+    }
+    .state-flag-fallback {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 1.46rem;
+        height: 1.02rem;
+        border-radius: 0.15rem;
+        padding: 0 0.18rem;
+        font-size: 0.58rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        color: rgba(255,255,255,0.96);
+        background: linear-gradient(135deg, rgba(0,212,255,0.3), rgba(0,120,180,0.46));
+        border: 1px solid rgba(255,255,255,0.24);
+        text-transform: uppercase;
+    }
+    .city-count { color: rgba(0,212,255,0.9); font-weight: 700; }
+    @media (max-width: 768px) {
+        .summary-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 540px) {
+        .summary-grid { grid-template-columns: 1fr; }
+    }
+
+    .analytics-loading-overlay {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(8, 12, 18, 0.82);
+        z-index: 5000;
+        backdrop-filter: blur(2px);
+    }
+
+    .analytics-loading-overlay.active {
+        display: flex;
+    }
+
+    .analytics-loading-card {
+        max-width: 420px;
+        width: calc(100% - 2rem);
+        text-align: center;
+        background: rgba(12, 18, 28, 0.98);
+        border: 1px solid rgba(0,212,255,0.45);
+        border-radius: 14px;
+        padding: 1.2rem 1rem;
+        color: rgba(255,255,255,0.92);
+    }
+
+    .analytics-loading-spinner {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        border: 3px solid rgba(0, 212, 255, 0.2);
+        border-top-color: rgba(0, 212, 255, 0.95);
+        margin: 0 auto 0.85rem;
+        animation: analyticsSpin 0.9s linear infinite;
+    }
+
+    @keyframes analyticsSpin {
+        to { transform: rotate(360deg); }
+    }
+</style>
+
+<div id="analyticsLoadingOverlay" class="analytics-loading-overlay" aria-live="polite" aria-busy="true">
+    <div class="analytics-loading-card">
+        <div class="analytics-loading-spinner"></div>
+        <div>Loading analytics data. This can take a little while for large date ranges.</div>
+    </div>
+</div>
+
+<div class="dashboard-header">
+    <h2 class="dashboard-title">{{ page_title }}</h2>
+    <p class="stats-source">Scope: <strong>{{ selected_convention|default:convention.name }} {{ selected_file_year|default:"" }}</strong></p>
+</div>
+
+<div class="filters-row">
+    <span class="year-filter-label">Filter By View Time:</span>
+    <input id="dateRangeInput" class="filter-input" type="text" placeholder="Select date range" value="{{ start_date }} to {{ end_date }}">
+    <button type="button" class="filter-btn {% if preset == '24h' %}active{% endif %}" data-preset="24h">24h</button>
+    <button type="button" class="filter-btn {% if preset == '7d' %}active{% endif %}" data-preset="7d">7d</button>
+    <button type="button" class="filter-btn {% if preset == '30d' %}active{% endif %}" data-preset="30d">30d</button>
+    <button type="button" class="filter-btn secondary" id="applyDateFilter">Apply</button>
+    <button type="button" class="filter-btn secondary" id="resetDateFilter">Reset</button>
+</div>
+
+{% if file_stats_by_year %}
+<div class="filters-row year-filters-row">
+    <span class="year-filter-label">Filter By Convention Year:</span>
+    <button type="button" class="filter-btn secondary file-year-btn {% if not selected_file_year %}active{% endif %}" onclick="updateDashboardParams({file_year: ''})">All</button>
+    {% for item in file_stats_by_year %}
+    <button type="button" class="filter-btn file-year-btn {% if selected_file_year and selected_file_year|stringformat:'s' == item.year|stringformat:'s' %}active{% endif %}" onclick="updateDashboardParams({file_year: '{{ item.year }}'})">{{ item.year }}</button>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if app_key %}
+<input type="hidden" id="page_app_key" value="{{ app_key }}">
+{% endif %}
+
+<!-- Summary Cards -->
+<div class="summary-grid">
+    {% for item in summary_cards %}
+    <div class="summary-card">
+        <span class="summary-label">{{ item.label }}</span>
+        <div class="summary-value">{{ item.value }}</div>
+        <div class="summary-description"></div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="stats-grid">
+    <details class="stats-card" open>
+        <summary><span>Visitor Graph</span></summary>
+        <div class="stats-card-content">
+            <div id="chartLegend30d" class="chart-legend-fixed" aria-hidden="true">
+                <span class="chart-legend-item"><span class="chart-legend-swatch"></span><span>Visitors</span></span>
+                <span class="chart-legend-item"><span class="chart-legend-swatch views"></span><span>Views</span></span>
+                <span class="chart-legend-item"><span class="chart-legend-swatch visits"></span><span>Visits</span></span>
+                <span class="chart-legend-item"><span class="chart-legend-swatch bounces"></span><span>Bounces</span></span>
+            </div>
+            <div class="chart-layout">
+                <div class="chart-yaxis-wrap">
+                    <canvas id="chart30dYAxis" width="72" height="350"></canvas>
+                </div>
+                <div class="chart-scroll-wrap">
+                    <canvas id="chart30d" width="800" height="350"></canvas>
+                </div>
+            </div>
+        </div>
+    </details>
+
+    <details class="stats-card" open>
+        <summary><span>{{ country_title|default:'Visitors by Country' }}</span></summary>
+        <div class="stats-card-content">
+            {% if country_stats %}
+            <div id="countriesList" style="max-height:600px; overflow-y:auto; padding-right:0.5rem;">
+                {% for country, count in country_stats %}
+                <div class="country-item" data-country="{{ country }}">
+                    <div class="country-header-wrapper" onclick="toggleCountryExpand(this)">
+                        <div style="display:flex; align-items:center; gap:0.75rem; flex:1;">
+                            <i class="bi bi-chevron-right" style="font-size:0.8rem; min-width:0.8rem;"></i>
+                            <span class="referer-label" style="margin:0;">{{ country }}</span>
+                        </div>
+                        <span class="referer-count">{{ count }}</span>
+                    </div>
+                    <div class="cities-list-wrapper"><div class="cities-grid" data-cities-grid="true"></div></div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p>No geographic data available.</p>
+            {% endif %}
+        </div>
+    </details>
+
+    {% if view_type == 'global' %}
+    <details class="stats-card" open>
+        <summary><span>{{ referrer_title|default:'Top Referrers' }}</span></summary>
+        <div class="stats-card-content">
+            {% if referer_stats %}
+            <ul class="referer-list">
+                {% for referer, count in referer_stats %}
+                <li class="referer-item"><span class="referer-label">{{ referer }}</span><span class="referer-count">{{ count }}</span></li>
+                {% endfor %}
+            </ul>
+            {% else %}<p>No referrer data available.</p>{% endif %}
+        </div>
+    </details>
+    {% endif %}
+
+    {% if view_type == 'global' %}
+    <details class="stats-card" open>
+        <summary><span>{{ top_pages_title|default:'Top Pages' }}</span></summary>
+        <div class="stats-card-content">
+            {% if top_pages_stats %}
+            <ul class="referer-list">
+                {% for item in top_pages_stats %}
+                <li class="referer-item"><span class="referer-label">{{ item.0|truncatewords:8 }}</span><span class="referer-count">{{ item.1 }}</span></li>
+                {% endfor %}
+            </ul>
+            {% else %}<p>No page data available.</p>{% endif %}
+        </div>
+    </details>
+    {% endif %}
+</div>
+
+<!-- Scripts: Chart.js, safety shim, Flatpickr, and admin-like JS -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Safety shim for CSSStyleSheet.cssRules (avoid cross-origin exceptions)
+(function(){
+    try {
+        const desc = Object.getOwnPropertyDescriptor(CSSStyleSheet.prototype, 'cssRules');
+        if (desc && typeof desc.get === 'function') {
+            const original = desc.get;
+            Object.defineProperty(CSSStyleSheet.prototype, 'cssRules', {
+                get: function() {
+                    try { return original.call(this); } catch (e) { return null; }
+                },
+                configurable: true
+            });
+        }
+    } catch (e) {}
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+    function showAnalyticsLoading() {
+        const overlay = document.getElementById('analyticsLoadingOverlay');
+        if (overlay) {
+            overlay.classList.add('active');
+        }
+    }
+
+    window.addEventListener('beforeunload', showAnalyticsLoading);
+
+    // Toggle countries -> populate cities lazily
+    function toggleCountryExpand(headerElement) {
+        const countryItem = headerElement.closest('.country-item');
+        const countryName = countryItem.getAttribute('data-country');
+        const chevron = headerElement.querySelector('.bi-chevron-right');
+        const citiesWrapper = countryItem.querySelector('.cities-list-wrapper');
+        const citiesGrid = countryItem.querySelector('[data-cities-grid="true"]');
+        if (!citiesWrapper) return;
+        const isExpanded = citiesWrapper.classList.contains('expanded');
+        if (isExpanded) {
+            citiesWrapper.classList.remove('expanded'); headerElement.classList.remove('expanded'); chevron.style.transform='rotate(0deg)';
+        } else {
+            citiesWrapper.classList.add('expanded'); headerElement.classList.add('expanded'); chevron.style.transform='rotate(90deg)';
+            if (citiesGrid && citiesGrid.children.length === 0) {
+                const cities = (window.countryCitiesMap && window.countryCitiesMap[countryName]) || [];
+                if (cities.length === 0) {
+                    citiesGrid.innerHTML = '<div style="color:#6b7280;padding:0.5rem;">No city data</div>';
+                } else {
+                    cities.forEach(item => {
+                        const city = (typeof item === 'string') ? item : (item.city || '');
+                        const count = (typeof item === 'object') ? item.count : 0;
+                        const div = document.createElement('div');
+                        div.className = 'city-item';
+
+                        const cityNode = buildCityNameNode(city, countryName);
+                        const countNode = document.createElement('span');
+                        countNode.className = 'city-count';
+                        countNode.textContent = String(count);
+
+                        div.appendChild(cityNode);
+                        div.appendChild(countNode);
+                        citiesGrid.appendChild(div);
+                    });
+                }
+            }
+        }
+    }
+
+    // Debug helper suppressed from page output
+    const debugEl = null;
+    function dbg(msg) { try { if (debugEl) { const p=document.createElement('div'); p.textContent=msg; debugEl.appendChild(p);} else { console.debug(msg);} } catch (e) { console.debug('dbg err', e); } }
+
+    // Parse JSON data safely
+    let chartData = {};
+    let countryCitiesMap = {};
+    let countryNameToCode = {};
+    let regionNameToCode = {};
+    try { chartData = JSON.parse('{{ chart_data|escapejs }}' || '{}'); dbg('chartData parsed'); } catch(e) { dbg('chartData parse error: '+e); }
+    try {
+        const rawJson = '{{ country_cities_map|escapejs }}';
+        countryCitiesMap = JSON.parse(rawJson || '{}');
+        dbg('countryCitiesMap parsed');
+    } catch(e) { 
+        console.error('countryCitiesMap parse error:', e);
+        dbg('countryCitiesMap parse error: '+e); 
+    }
+    try {
+        countryNameToCode = JSON.parse('{{ country_name_to_code|escapejs }}' || '{}');
+    } catch (e) {
+        countryNameToCode = {};
+    }
+    try {
+        regionNameToCode = JSON.parse('{{ region_name_to_code|escapejs }}' || '{}');
+    } catch (e) {
+        regionNameToCode = {};
+    }
+    window.countryCitiesMap = countryCitiesMap;
+
+    const SUBNATIONAL_FLAG_BASE = "{% static 'icons/subnational/' %}";
+    const missingSubdivisionFlags = new Set();
+
+    function countryCodeToFlag(code) {
+        const cc = (code || '').toUpperCase();
+        if (!/^[A-Z]{2}$/.test(cc)) return '';
+        const A = 0x1F1E6;
+        return String.fromCodePoint(A + (cc.charCodeAt(0) - 65), A + (cc.charCodeAt(1) - 65));
+    }
+
+    function applyCountryFlags() {
+        const labels = document.querySelectorAll('.country-item .referer-label');
+        labels.forEach((labelEl) => {
+            if (!labelEl || labelEl.querySelector('.country-flag')) return;
+            const countryName = (labelEl.textContent || '').trim();
+            const code = countryNameToCode[countryName.toLowerCase()] || '';
+            const flag = countryCodeToFlag(code);
+            if (!flag) return;
+            const flagEl = document.createElement('span');
+            flagEl.className = 'country-flag';
+            flagEl.textContent = flag;
+            labelEl.prepend(flagEl);
+        });
+    }
+
+    function getCountryCode(countryName) {
+        return (countryNameToCode[String(countryName || '').toLowerCase()] || '').toUpperCase();
+    }
+
+    function getRegionName(cityLabel) {
+        const raw = String(cityLabel || '').trim();
+        if (!raw.includes(',')) return '';
+        const parts = raw.split(',').map((p) => p.trim()).filter(Boolean);
+        return parts.length >= 2 ? parts[parts.length - 1] : '';
+    }
+
+    function getRegionCode(countryCode, regionName) {
+        const cc = String(countryCode || '').toUpperCase();
+        const regionRaw = String(regionName || '').trim();
+        if (!cc || !regionRaw) return '';
+        if (/^[A-Za-z]{2}$/.test(regionRaw)) {
+            return regionRaw.toUpperCase();
+        }
+        const byCountry = regionNameToCode[cc] || {};
+        return String(byCountry[regionRaw.toLowerCase()] || '').toUpperCase();
+    }
+
+    function makeRegionBadge(regionCode, regionName) {
+        const badge = document.createElement('span');
+        badge.className = 'state-flag-fallback';
+        badge.textContent = regionCode;
+        badge.title = regionName || regionCode;
+        return badge;
+    }
+
+    function makeSubdivisionMarker(countryCode, regionCode, regionName) {
+        const key = `${countryCode}-${regionCode}`.toLowerCase();
+        if (missingSubdivisionFlags.has(key)) {
+            return makeRegionBadge(regionCode, regionName);
+        }
+        const img = document.createElement('img');
+        img.className = 'state-flag';
+        img.loading = 'lazy';
+        img.alt = `${regionName || regionCode} flag`;
+        img.title = regionName || regionCode;
+        img.src = `${SUBNATIONAL_FLAG_BASE}${key}.svg`;
+        img.onerror = function onSubdivisionFlagError() {
+            missingSubdivisionFlags.add(key);
+            this.replaceWith(makeRegionBadge(regionCode, regionName));
+        };
+        return img;
+    }
+
+    function buildCityNameNode(cityLabel, countryName) {
+        const label = String(cityLabel || '').trim() || 'Unknown';
+        const countryCode = getCountryCode(countryName);
+        const regionName = getRegionName(label);
+        const regionCode = getRegionCode(countryCode, regionName);
+        const span = document.createElement('span');
+        span.className = 'city-name';
+
+        if ((countryCode === 'US' || countryCode === 'CA') && regionCode) {
+            span.appendChild(makeSubdivisionMarker(countryCode, regionCode, regionName));
+        }
+
+        span.appendChild(document.createTextNode(label));
+        return span;
+    }
+
+    // Preset buttons + flatpickr for date filtering
+    const dateRangeInput = document.getElementById('dateRangeInput');
+    const presetButtons = Array.from(document.querySelectorAll('[data-preset]'));
+    const applyDateFilterBtn = document.getElementById('applyDateFilter');
+    const resetDateFilterBtn = document.getElementById('resetDateFilter');
+    let selectedPreset = '{{ preset|default:"30d" }}';
+
+    function updateDashboardParams(params) {
+        showAnalyticsLoading();
+        const url = new URL(window.location.href);
+        Object.keys(params).forEach((key) => {
+            const val = params[key];
+            if (val === null || val === undefined || val === '') {
+                url.searchParams.delete(key);
+            } else {
+                url.searchParams.set(key, val);
+            }
+        });
+        window.location.href = url.toString();
+    }
+
+    if (dateRangeInput && typeof flatpickr !== 'undefined') {
+        flatpickr(dateRangeInput, {
+            mode: 'range',
+            dateFormat: 'Y-m-d',
+            defaultDate: ['{{ start_date }}', '{{ end_date }}']
+        });
+    }
+
+    presetButtons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+            selectedPreset = btn.getAttribute('data-preset') || '30d';
+            updateDashboardParams({ preset: selectedPreset, start_date: null, end_date: null });
+        });
+    });
+
+    if (applyDateFilterBtn) {
+        applyDateFilterBtn.addEventListener('click', () => {
+            const raw = (dateRangeInput && dateRangeInput.value ? dateRangeInput.value : '').trim();
+            if (!raw) {
+                updateDashboardParams({ preset: selectedPreset || '30d', start_date: null, end_date: null });
+                return;
+            }
+            const parts = raw.split(' to ').map(s => s.trim()).filter(Boolean);
+            if (parts.length === 2) {
+                updateDashboardParams({ start_date: parts[0], end_date: parts[1], preset: 'custom' });
+            }
+        });
+    }
+
+    if (resetDateFilterBtn) {
+        resetDateFilterBtn.addEventListener('click', () => {
+            updateDashboardParams({ preset: '30d', start_date: null, end_date: null });
+        });
+    }
+
+    function createLineChart(ctxId, yAxisId, dataObj) {
+        const ctx = document.getElementById(ctxId);
+        const yAxisCtx = document.getElementById(yAxisId);
+        const hasData = ctx && dataObj && Array.isArray(dataObj.labels) && dataObj.labels.length > 0;
+        if (hasData) {
+            const host = ctx.parentElement;
+            const points = dataObj.labels.length;
+            const hostWidth = host ? host.clientWidth : 800;
+            const targetWidth = Math.max(hostWidth, points * 42, 800);
+            ctx.width = targetWidth;
+            const visitors = Array.isArray(dataObj.counts) ? dataObj.counts : [];
+            const views = Array.isArray(dataObj.views) ? dataObj.views : [];
+            const visits = Array.isArray(dataObj.visits) ? dataObj.visits : [];
+            const bounces = Array.isArray(dataObj.bounces) ? dataObj.bounces : [];
+            const allValues = [...visitors, ...views, ...visits, ...bounces].map(v => Number(v) || 0);
+            const maxValue = allValues.length ? Math.max(...allValues) : 0;
+            const yMax = maxValue <= 5 ? 5 : Math.ceil(maxValue * 1.1);
+
+            if (yAxisCtx) {
+                new Chart(yAxisCtx, {
+                    type:'line',
+                    data:{
+                        labels: dataObj.labels,
+                        datasets:[{
+                            data: visitors,
+                            borderColor:'rgba(0,0,0,0)',
+                            backgroundColor:'rgba(0,0,0,0)',
+                            pointRadius:0,
+                            borderWidth:0
+                        }]
+                    },
+                    options:{
+                        responsive:false,
+                        animation:false,
+                        maintainAspectRatio:false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { enabled: false }
+                        },
+                        scales: {
+                            x: { display: false },
+                            y: {
+                                min: 0,
+                                max: yMax,
+                                ticks: {
+                                    color: 'rgba(255,255,255,0.72)',
+                                    padding: 8,
+                                    maxTicksLimit: 7
+                                },
+                                grid: {
+                                    display: false,
+                                    drawBorder: false
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            const separateOverlapLines = {
+                id: 'separateOverlapLines',
+                beforeDatasetDraw(chart, args, pluginOptions) {
+                    const shifts = (pluginOptions && pluginOptions.pixelShifts) || [];
+                    const shift = Number(shifts[args.index] || 0);
+                    if (!shift) return;
+                    chart.ctx.save();
+                    chart.ctx.translate(0, shift);
+                },
+                afterDatasetDraw(chart, args, pluginOptions) {
+                    const shifts = (pluginOptions && pluginOptions.pixelShifts) || [];
+                    const shift = Number(shifts[args.index] || 0);
+                    if (!shift) return;
+                    chart.ctx.restore();
+                }
+            };
+
+            new Chart(ctx, {
+                type:'line',
+                plugins: [separateOverlapLines],
+                data:{
+                    labels: dataObj.labels,
+                    datasets:[
+                        {
+                            label: 'Visitors',
+                            data: visitors,
+                            borderColor:'rgba(0,212,255,0.92)',
+                            backgroundColor:'rgba(0,212,255,0.12)',
+                            fill:false,
+                            tension:0.25,
+                            pointRadius: 2,
+                            borderWidth: 3
+                        },
+                        {
+                            label: 'Views',
+                            data: views,
+                            borderColor:'rgba(255,72,72,0.9)',
+                            backgroundColor:'rgba(255,72,72,0.16)',
+                            fill:false,
+                            tension:0.25,
+                            pointRadius: 2,
+                            borderWidth: 3
+                        },
+                        {
+                            label: 'Visits',
+                            data: visits,
+                            borderColor:'rgba(46,204,113,0.92)',
+                            backgroundColor:'rgba(46,204,113,0.16)',
+                            fill:false,
+                            tension:0.25,
+                            pointRadius: 2,
+                            borderWidth: 3
+                        },
+                        {
+                            label: 'Bounces',
+                            data: bounces,
+                            borderColor:'rgba(255,208,64,0.95)',
+                            backgroundColor:'rgba(255,208,64,0.18)',
+                            fill:false,
+                            tension:0.25,
+                            pointRadius: 2,
+                            borderWidth: 3
+                        }
+                    ]
+                },
+                options:{
+                    responsive:false,
+                    maintainAspectRatio:false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            usePointStyle: true,
+                            boxWidth: 8,
+                            boxHeight: 8,
+                            callbacks: {
+                                title: function(items) {
+                                    if (!items || !items.length) return '';
+                                    const raw = items[0].label || '';
+                                    const dt = new Date(raw);
+                                    if (Number.isNaN(dt.getTime())) return raw;
+                                    return dt.toLocaleDateString(undefined, {
+                                        year: 'numeric',
+                                        month: 'short',
+                                        day: 'numeric'
+                                    });
+                                },
+                                labelPointStyle: function() {
+                                    return {
+                                        pointStyle: 'circle',
+                                        rotation: 0
+                                    };
+                                }
+                            }
+                        },
+                        separateOverlapLines: {
+                            pixelShifts: [0, -2, 2, -4]
+                        }
+                    },
+                    layout: {
+                        padding: {
+                            left: 26,
+                            right: 12,
+                            top: 6,
+                            bottom: 10
+                        }
+                    },
+                    scales: {
+                        x: {
+                            offset: true,
+                            ticks: {
+                                padding: 10,
+                                maxRotation: 0,
+                                minRotation: 0
+                            }
+                        },
+                        y: {
+                            min: 0,
+                            max: yMax,
+                            ticks: {
+                                display: false,
+                                padding: 10
+                            },
+                            grid: {
+                                drawBorder: false
+                            }
+                        }
+                    }
+                }
+            });
+        } else if (ctx && ctx.parentElement) { ctx.parentElement.innerHTML = '<div class="no-chart-data">No visitor data available for this period.</div>'; }
+    }
+
+    applyCountryFlags();
+    try { if (typeof Chart !== 'undefined') { createLineChart('chart30d', 'chart30dYAxis', chartData); } } catch(e) { dbg('createLineChart error: '+e); }
+</script>
+
+{% endblock %}

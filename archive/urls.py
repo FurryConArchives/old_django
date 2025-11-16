@@ -1,0 +1,98 @@
+from .views import schedule_index, schedule_list
+from django.urls import path
+from . import views
+from .sitemaps import robots_txt, sitemap_xml
+
+urlpatterns = [
+    path('', views.index, name='index'),
+    path('sitemap.xml', sitemap_xml, name='sitemap'),
+    path('robots.txt', robots_txt, name='robots_txt'),
+    path('toggle-auto-fetch/', views.toggle_auto_fetch, name='toggle_auto_fetch'),
+    path('documents', views.document_list, name='document_list'),
+    path('documents/data', views.document_list_data, name='document_list_data'),
+    path('documents/<slug:slug>', views.document_detail, name='document_detail'),
+    path('documents/<slug:slug>/download', views.document_download, name='document_download'),
+    path('documents/<slug:slug>/mirrors', views.api_document_mirrors, name='api_document_mirrors'),
+    path('documents/<slug:slug>/view', views.document_view, name='document_view'),
+    path('documents/<slug:slug>/page/<int:page_num>.jpg', views.pdf_page_image, name='pdf_page_image'),
+    path('documents/<slug:slug>/page/<int:page_num>/text', views.pdf_page_text, name='pdf_page_text'),
+    path('documents/<slug:slug>/search', views.pdf_text_search, name='pdf_search'),
+    path('documents/<slug:slug>/textsearch', views.pdf_text_search, name='pdf_text_search'),
+    path('categories', views.category_list, name='category_list'),
+    path('categories/browse', views.category_display, name='category_display'),
+    path('conventions', views.category_browse, name='category_browse'),
+    path('conventions/<slug:slug>', views.convention_detail, name='convention_detail'),
+    path('conventions/<slug:slug>/<int:year>', views.convention_detail, name='convention_detail_year'),
+    path('faq', views.faq, name='faq'),
+    path('contact', views.contact, name='contact'),
+    path('preservation-policy', views.preservation_policy, name='preservation_policy'),
+    path('rights', views.rights, name='rights'),
+    path('staff', views.board_of_directors, name='board_of_directors'),
+    path('preservation-tips', views.preservation_tips, name='preservation_tips'),
+    path('the-vault', views.physical_inventory_grid, name='physical_inventory_grid'),
+    path('schedules/list', schedule_list, name='schedule_list'),
+    path('schedules/<slug:slug>', views.schedule_view, name='schedule_view'),
+    path('schedules/<slug:slug>/csv', views.schedule_csv, name='schedule_csv'),
+    path('schedules/<slug:slug>/print', views.schedule_print, name='schedule_print'),
+    path('schedules/<slug:slug>/schema.json', views.schedule_schema_download, name='schedule_schema_download'),
+    
+    # Async export endpoints
+    path('schedules/<slug:slug>/export/start', views.schedule_export_start, name='schedule_export_start'),
+    path('schedules/export/status/<str:task_id>', views.schedule_export_status, name='schedule_export_status'),
+    path('schedules/export/download/<str:task_id>', views.schedule_export_download, name='schedule_export_download'),
+    path('schedules/export/cancel/<str:task_id>', views.schedule_export_cancel, name='schedule_export_cancel'),
+    path('schedules/', schedule_index, name='schedule_index'),
+
+    # Custom Admin URLs
+    path('admin', views.admin_dashboard, name='admin_dashboard'),
+    path('admin/login', views.admin_login, name='admin_login'),
+    path('admin/logout', views.admin_logout, name='admin_logout'),
+    path('con-dashboard', views.con_dashboard, name='con_dashboard'),
+    path('con-dashboard/<str:key>', views.con_dashboard, name='con_dashboard_key'),
+    path('admin/upload', views.admin_upload, name='admin_upload'),
+    path('admin/documents', views.admin_documents, name='admin_documents'),
+    path('admin/documents/export', views.admin_export_documents, name='admin_documents_export'),
+    path('admin/documents/<slug:slug>/edit', views.admin_edit_document, name='admin_edit_document'),
+    path('admin/documents/<slug:slug>/delete', views.admin_delete_document, name='admin_delete_document'),
+    path('admin/categories', views.admin_categories, name='admin_categories'),
+    path('admin/categories/<int:category_id>/edit', views.admin_edit_category, name='admin_edit_category'),
+    path('admin/categories/<int:category_id>/delete', views.admin_delete_category, name='admin_delete_category'),
+    path('admin/statistics', views.admin_statistics, name='admin_statistics'),
+    path('admin/schedule', views.admin_schedules, name='admin_schedules'),
+    path('admin/the-vault', views.admin_physical_inventory, name='admin_physical_inventory'),
+    path('admin/the-vault/contributors', views.admin_vault_contributors, name='admin_vault_contributors'),
+    path('admin/the-vault/<int:item_id>/edit', views.admin_edit_physical_inventory, name='admin_edit_physical_inventory'),
+    path('admin/api-keys', views.admin_api_keys, name='admin_api_keys'),
+    path('admin/site-banner', views.admin_site_banner, name='admin_site_banner'),
+    path('admin/faq', views.admin_faq, name='admin_faq'),
+    path('admin/faq/<int:entry_id>/edit', views.admin_edit_faq, name='admin_edit_faq'),
+    path('admin/faq/<int:entry_id>/delete', views.admin_delete_faq, name='admin_delete_faq'),
+
+    # Widget proxy kept on the legacy frontend host (not the public API).
+    path('api/telegram-messages', views.internal_telegram_messages_proxy, name='api_telegram_messages'),
+    path('api/telegram-messages/', views.internal_telegram_messages_proxy, name='api_telegram_messages_slash'),
+
+    # Internal APIs (not public-facing) - callable from localhost or internal processes.
+    # These endpoints are trusted by virtue of being invoked from the local
+    # application or by a logged-in staff user; they never require or check
+    # App keys/shared secrets.  Do not expose them to the public internet.
+    path('internal/api/discord-avatar/<str:discord_id>', views.discord_avatar_proxy, name='internal_discord_avatar_proxy'),
+    path('internal/api/discord-user/<str:discord_id>', views.discord_user_info, name='internal_discord_user_info'),
+    path('internal/api/discord-search/<str:username>', views.discord_search_user, name='internal_discord_search_user'),
+    path('internal/api/guidebook/<str:guide_slug>', views.api_guidebook, name='internal_api_guidebook'),
+    path('internal/api/telegram-avatar/<str:username>', views.internal_telegram_avatar_proxy, name='internal_telegram_avatar_proxy'),
+    path('internal/api/telegram-messages', views.internal_telegram_messages_proxy, name='internal_telegram_messages_proxy'),
+    path('internal/api/telegram-messages/', views.internal_telegram_messages_proxy, name='internal_telegram_messages_proxy_slash'),
+    path('internal/api/telegram-media-preview', views.internal_telegram_media_proxy, name='internal_telegram_media_proxy'),
+    path('internal/api/telegram-media-preview/', views.internal_telegram_media_proxy, name='internal_telegram_media_proxy_slash'),
+    path('internal/api/telegram-user/<str:username>', views.telegram_user_info, name='internal_telegram_user_info'),
+    path('internal/api/sched/<slug:slug>', views.api_sched, name='internal_api_sched'),
+    path('internal/api/schedule-list', views.api_schedule_list, name='internal_api_schedule_list'),
+    path('internal/api/schedule-create', views.api_schedule_create, name='internal_api_schedule_create'),
+    path('internal/api/schedule-edit', views.api_schedule_edit, name='internal_api_schedule_edit'),
+    path('internal/api/categories', views.api_categories_list, name='internal_api_categories_list'),
+    path('internal/api/schedule-fetch-now', views.api_schedule_fetch_now, name='internal_api_schedule_fetch_now'),
+    path('internal/api/schedule-fetch-all', views.api_schedule_fetch_all, name='internal_api_schedule_fetch_all'),
+    path('internal/api/venvi/<slug:org_id>/<slug:app_id>/', views.api_venvi_firestore_dump, name='internal_api_venvi_dump'),
+    path('internal/api/venvi/<slug:org_id>/<slug:app_id>', views.api_venvi_firestore_dump, name='internal_api_venvi_dump_noslash'),
+]

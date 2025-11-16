@@ -1,0 +1,141 @@
+{% extends "archive/base.html" %}
+{% load archive_tags %}
+{% block content %}
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+    <h1 style="margin: 0;">The Vault</h1>
+</div>
+
+<!-- Search and Filter Bar -->
+<div style="border: 2px solid var(--accent-color); border-radius: 16px; background: var(--bg-secondary); box-shadow: 0 4px 24px rgba(0,0,0,0.12); overflow: hidden;">
+    <div style="padding: 2rem; display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+        <!-- Search Input -->
+        <div style="flex: 1; min-width: 300px;">
+            <input type="text" id="search-filter" class="form-control" placeholder="Search physical inventory by convention, donor, or notes..." style="background: var(--bg-tertiary); border-color: var(--border-color); color: var(--text-primary); padding: 0.75rem 1rem; border-radius: 8px; width: 100%;">
+        </div>
+        
+        <!-- Search Button -->
+        <button type="button" id="search-btn" class="btn" style="background: linear-gradient(135deg, var(--accent-color), #00a8d0); color: var(--bg-primary); border: none; border-radius: 8px; padding: 0.75rem 2rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
+            <i class="bi bi-search"></i> Search
+        </button>
+    </div>
+    
+    <!-- Results Summary -->
+    <div style="padding: 0 2rem 1rem 2rem; font-size: 0.9rem; color: var(--text-secondary);">
+        Showing <span id="filtered-count">0</span> of <span id="total-count">0</span> items
+    </div>
+</div>
+
+<div class="inventory-grid" id="inventory-grid" style="margin-top: 2rem;" aria-busy="true" aria-label="Loading vault items">
+</div>
+<style>
+.inventory-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.5em;
+    margin: 2em 0;
+}
+.inventory-card {
+    background: #232b2b;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+    padding: 1.5em 1.2em;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    min-height: 160px;
+    border: 1px solid #3d6652;
+    transition: box-shadow 0.2s;
+}
+.inventory-card:hover {
+    box-shadow: 0 6px 24px rgba(0,0,0,0.18);
+    border-color: #00d4ff;
+}
+.inventory-header {
+    font-size: 1.2em;
+    font-weight: bold;
+    margin-bottom: 0.7em;
+    color: #00d4ff;
+}
+.inventory-body div {
+    margin-bottom: 0.4em;
+}
+
+@media (max-width: 600px) {
+    #search-filter, #search-btn {
+        width: 100%;
+    }
+    #search-btn {
+        margin-top: 0.5rem;
+    }
+    .inventory-grid {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+    .inventory-card {
+        padding: 1em;
+    }
+    .inventory-header {
+        font-size: 1.1rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+if (!window.FCA) {
+    console.error('FCA API client failed to load');
+    return;
+}
+
+const searchInput = document.getElementById('search-filter');
+const searchBtn = document.getElementById('search-btn');
+const inventoryGrid = document.getElementById('inventory-grid');
+const totalCount = document.getElementById('total-count');
+const filteredCount = document.getElementById('filtered-count');
+let vaultItems = [];
+
+async function loadVaultItems(query) {
+    if (!inventoryGrid) return;
+    inventoryGrid.innerHTML = FCA.renderVaultCardsSkeleton(6);
+    inventoryGrid.setAttribute('aria-busy', 'true');
+    try {
+        const data = await FCA.loadVault({ q: query || '', page_size: 200, page: 1 });
+        vaultItems = data.results || [];
+        inventoryGrid.innerHTML = vaultItems.map((item) => FCA.renderVaultItem(item)).join('') ||
+            '<div style="color:var(--text-secondary);padding:2rem;">No vault items found.</div>';
+        inventoryGrid.removeAttribute('aria-busy');
+        totalCount.textContent = data.pagination?.total ?? vaultItems.length;
+        filteredCount.textContent = vaultItems.length;
+    } catch (error) {
+        console.error('Vault load failed', error);
+        inventoryGrid.innerHTML = '<div style="color:var(--text-secondary);padding:2rem;">Unable to load vault items.</div>';
+        inventoryGrid.removeAttribute('aria-busy');
+    }
+}
+
+function applyFilters() {
+    const searchTerm = (searchInput?.value || '').trim();
+    loadVaultItems(searchTerm);
+}
+
+const urlQuery = new URLSearchParams(window.location.search).get('q');
+if (urlQuery && searchInput) {
+    searchInput.value = urlQuery;
+}
+
+searchInput?.addEventListener('input', applyFilters);
+searchBtn?.addEventListener('click', applyFilters);
+searchInput?.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        applyFilters();
+    }
+});
+
+    if (inventoryGrid) {
+        inventoryGrid.innerHTML = FCA.renderVaultCardsSkeleton(6);
+    }
+    loadVaultItems(urlQuery || '');
+});
+</script>
+{% endblock %}

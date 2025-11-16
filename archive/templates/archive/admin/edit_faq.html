@@ -1,0 +1,50 @@
+{% extends 'archive/admin/base_admin.html' %}
+
+{% block title %}Edit FAQ - Admin{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 820px;">
+    <h3 style="margin-bottom: 1rem;">Edit FAQ</h3>
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="{{ form.question.id_for_label }}">Question *</label>
+            {{ form.question }}
+            {{ form.question.errors }}
+        </div>
+        <div class="form-group">
+            <label for="{{ form.answer.id_for_label }}">Answer *</label>
+            {{ form.answer }}
+            <span class="helptext">{{ form.answer.help_text }}</span>
+            {{ form.answer.errors }}
+        </div>
+        <div class="form-group">
+            <label for="{{ form.icon.id_for_label }}">Icon</label>
+            {{ form.icon }}
+            <span class="helptext">{{ form.icon.help_text }}</span>
+            {{ form.icon.errors }}
+        </div>
+        <div class="form-group">
+            <label for="{{ form.order.id_for_label }}">Order</label>
+            {{ form.order }}
+            {{ form.order.errors }}
+        </div>
+        <div class="form-group">
+            <label for="{{ form.slug.id_for_label }}">Slug</label>
+            {{ form.slug }}
+            <span class="helptext">{{ form.slug.help_text }}</span>
+            {{ form.slug.errors }}
+        </div>
+        <div class="form-group">
+            <label style="display:flex;gap:0.6rem;align-items:center;">
+                {{ form.is_published }}
+                Published
+            </label>
+        </div>
+        <div style="display:flex;gap:1rem;">
+            <button type="submit" class="btn btn-success"><i class="bi bi-save"></i> Save</button>
+            <a href="{% url 'admin_faq' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

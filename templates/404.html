@@ -1,0 +1,254 @@
+{% extends 'archive/base.html' %}
+
+{% block title %}404 - Page Not Found - Furry Con Archives{% endblock %}
+
+{% block extra_css %}
+<style>
+    .error-container {
+        text-align: center;
+        padding: 4rem 2rem;
+        min-height: 60vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .error-content {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .error-code {
+        font-size: clamp(6rem, 15vw, 12rem);
+        font-weight: 900;
+        background: linear-gradient(135deg, var(--accent-color), var(--primary-color));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        line-height: 1;
+        margin-bottom: 1rem;
+        position: relative;
+        display: inline-block;
+    }
+
+    .error-code::after {
+        content: '404';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, var(--accent-color), var(--primary-color));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        filter: blur(20px);
+        opacity: 0.5;
+        z-index: -1;
+    }
+
+    .error-icon {
+        font-size: 8rem;
+        color: var(--accent-color);
+        margin-bottom: 2rem;
+        opacity: 0.8;
+        animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+        0%, 100% {
+            transform: translateY(0px);
+        }
+        50% {
+            transform: translateY(-20px);
+        }
+    }
+
+    .error-title {
+        font-size: clamp(1.8rem, 4vw, 2.5rem);
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 1rem;
+    }
+
+    .error-message {
+        font-size: 1.1rem;
+        color: var(--text-secondary);
+        line-height: 1.6;
+        margin-bottom: 2.5rem;
+    }
+
+    .error-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 2rem;
+    }
+
+    .error-suggestions {
+        margin-top: 3rem;
+        padding: 2rem;
+        background: var(--bg-secondary);
+        border-radius: var(--radius);
+        border: 1px solid var(--border-color);
+        text-align: left;
+    }
+
+    .error-suggestions h3 {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .error-suggestions h3 i {
+        color: var(--accent-color);
+    }
+
+    .error-suggestions ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .error-suggestions li {
+        margin-bottom: 0.75rem;
+        color: var(--text-secondary);
+    }
+
+    .error-suggestions li a {
+        color: var(--accent-color);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .error-suggestions li a:hover {
+        color: var(--primary-color);
+        transform: translateX(5px);
+    }
+
+    .error-suggestions li a i {
+        font-size: 0.9rem;
+    }
+
+    @media (max-width: 768px) {
+        .error-container {
+            padding: 3rem 1.5rem;
+        }
+
+        .error-icon {
+            font-size: 6rem;
+        }
+
+        .error-actions {
+            flex-direction: column;
+        }
+
+        .error-actions .btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="error-container">
+    <div class="error-content">
+        <div class="error-icon">
+            <i class="bi bi-file-earmark-x"></i>
+        </div>
+        
+        <div class="error-code">404</div>
+        
+        <h1 class="error-title">Page Not Found</h1>
+        
+        <p class="error-message">
+            Oops! The page you're looking for seems to have wandered off into the digital void.
+            It might have been moved, deleted, or perhaps it never existed in the first place.
+        </p>
+        <div id="fun-fact" style="margin: 1.5rem 0 2.5rem 0; font-size: 1.08rem; color: var(--accent-color); font-style: italic; text-align: center;"></div>
+        <script>
+        // Fun furry facts
+            const funFacts = [
+                "Most conbooks are printed in small runs and many are thrown away after the event.",
+                "Some conbooks are so rare, only a handful of copies are known to exist!",
+                "Did you know? Many conbooks feature art and stories you can't find anywhere else.",
+                "Furry conbooks are a time capsule of fandom history and creativity.",
+                "Furry Con Archives preserves conbooks that would otherwise be lost forever.",
+                "Some conbooks are rescued from recycling bins or even dumpsters!",
+                "Collectors sometimes travel across the world to find stuff they are interested in.",
+                "A single conbook can document dozens of artists, writers, and community moments.",
+                "Many conventions don't keep their own archives—fans do it for them!",
+                "If you have an old conbook, you might be holding a piece of lost fandom history!",
+                "Conbooks are considered primary sources for furry fandom history—firsthand evidence of our community's creativity.",
+                "Furry Con Archives mission is to preserve, not profit: we never sell or monetize donated digitalized materials.",
+                "We respect takedown requests from creators and copyright holders—preservation is about respect, not ownership.",
+                "Most conbooks are never digitized by conventions themselves; fan-run archives are often the only source.",
+                "Donating a conbook helps ensure it survives for future generations of fans and researchers.",
+                "Some conbooks are the only surviving record of now-defunct conventions.",
+                "Furry Con Archives is run entirely by volunteers passionate about preservation.",
+                "We believe every conbook, no matter how small or obscure, is worth saving.",
+                "If you see a conbook headed for the trash, you could be saving fandom history by rescuing it!"
+            ];
+        document.addEventListener('DOMContentLoaded', function() {
+            const fact = funFacts[Math.floor(Math.random() * funFacts.length)];
+            document.getElementById('fun-fact').textContent = fact;
+        });
+        </script>
+
+        <div class="error-actions">
+            <a href="{% url 'index' %}" class="btn">
+                <i class="bi bi-house"></i>
+                Go Home
+            </a>
+            <a href="{% url 'category_browse' %}" class="btn btn-outline">
+                <i class="bi bi-grid"></i>
+                Browse by Convention
+            </a>
+        </div>
+
+        <div class="error-suggestions">
+            <h3>
+                <i class="bi bi-lightbulb"></i>
+                What you can do:
+            </h3>
+            <ul>
+                <li>
+                    <a href="{% url 'index' %}">
+                        <i class="bi bi-arrow-right"></i>
+                        Return to the homepage
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'document_list' %}">
+                        <i class="bi bi-arrow-right"></i>
+                        Browse all documents
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'category_browse' %}">
+                        <i class="bi bi-arrow-right"></i>
+                        Explore by category
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'faq' %}">
+                        <i class="bi bi-arrow-right"></i>
+                        Check out our FAQ
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

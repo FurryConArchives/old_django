@@ -1,0 +1,259 @@
+/**
+ * Furry Con Archives theme tokens.
+ * Dark is the default look. Light is an explicit opt-in via [data-theme="light"].
+ * Loaded after page CSS so token overrides always win.
+ */
+
+:root,
+[data-theme="dark"] {
+    color-scheme: dark;
+    --primary-color: #00beee;
+    --primary-dark: #004499;
+    --accent-color: #00d4ff;
+    --bg-primary: #0a0a0a;
+    --bg-secondary: #1a1a1a;
+    --bg-tertiary: #2a2a2a;
+    --text-primary: #ffffff;
+    --text-secondary: #cccccc;
+    --text-muted: #888888;
+    --border-color: #333333;
+    --success-color: #00cc66;
+    --error-color: #cc3300;
+    --warning-color: #ffaa00;
+    --shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    --shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.4);
+    --radius: 12px;
+    --radius-sm: 8px;
+    --glass-bg: rgba(20, 20, 20, 0.72);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --nav-bg: rgba(20, 20, 20, 0.88);
+    --overlay-bg: rgba(0, 0, 0, 0.65);
+    --header-bg: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+    --footer-bg: linear-gradient(180deg, rgba(18, 18, 18, 0.98) 0%, var(--bg-primary) 100%);
+    --chip-bg: var(--bg-secondary);
+    --chip-fill: rgba(255, 255, 255, 0.04);
+    --hairline: rgba(255, 255, 255, 0.08);
+    --surface-light: rgba(255, 255, 255, 0.02);
+    --surface-border: rgba(0, 212, 255, 0.12);
+    --on-primary: #ffffff;
+    --theme-color: #00beee;
+    --focus-ring: 0 0 0 3px rgba(0, 190, 238, 0.45);
+}
+
+[data-theme="light"] {
+    color-scheme: light;
+    --primary-color: #007fa8;
+    --primary-dark: #005f7e;
+    --accent-color: #0088b8;
+    --bg-primary: #f3f6fa;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #e7eef5;
+    --text-primary: #12202c;
+    --text-secondary: #3d5162;
+    --text-muted: #6a7d8f;
+    --border-color: #cfd9e4;
+    --success-color: #0a8f4d;
+    --error-color: #c42b16;
+    --warning-color: #b86a00;
+    --shadow: 0 4px 20px rgba(18, 32, 44, 0.08);
+    --shadow-hover: 0 8px 30px rgba(18, 32, 44, 0.12);
+    --glass-bg: rgba(255, 255, 255, 0.86);
+    --glass-border: rgba(18, 32, 44, 0.08);
+    --nav-bg: rgba(255, 255, 255, 0.92);
+    --overlay-bg: rgba(18, 32, 44, 0.45);
+    --header-bg: linear-gradient(135deg, #ffffff 0%, #eef3f8 100%);
+    --footer-bg: linear-gradient(180deg, #ffffff 0%, var(--bg-primary) 100%);
+    --chip-bg: #ffffff;
+    --chip-fill: rgba(18, 32, 44, 0.05);
+    --hairline: rgba(18, 32, 44, 0.1);
+    --surface-light: rgba(0, 90, 130, 0.04);
+    --surface-border: rgba(0, 127, 168, 0.2);
+    --on-primary: #ffffff;
+    --theme-color: #007fa8;
+    --focus-ring: 0 0 0 3px rgba(0, 127, 168, 0.28);
+}
+
+html {
+    color-scheme: dark;
+    background: var(--bg-primary);
+}
+
+html[data-theme="light"] {
+    color-scheme: light;
+}
+
+body,
+input,
+select,
+textarea,
+button {
+    color-scheme: inherit;
+}
+
+.header {
+    background: var(--header-bg);
+}
+
+.footer {
+    background: var(--footer-bg);
+}
+
+.theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    min-width: 44px;
+    min-height: 44px;
+    border-radius: 10px;
+    border: 1px solid rgba(0, 212, 255, 0.2);
+    background: rgba(0, 212, 255, 0.06);
+    color: var(--text-secondary);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.theme-toggle:hover,
+.theme-toggle:focus-visible {
+    border-color: rgba(0, 212, 255, 0.45);
+    background: rgba(0, 212, 255, 0.12);
+    color: var(--accent-color);
+}
+
+.theme-toggle [data-theme-icon="light"] {
+    display: none;
+}
+
+[data-theme="light"] .theme-toggle [data-theme-icon="light"] {
+    display: inline-block;
+}
+
+[data-theme="light"] .theme-toggle [data-theme-icon="dark"] {
+    display: none;
+}
+
+[data-theme="light"] .header h1 a:hover .logo-img,
+[data-theme="light"] .footer-brand .logo-img:hover {
+    filter: brightness(0) saturate(100%) invert(36%) sepia(74%) saturate(1200%) hue-rotate(166deg) brightness(90%) contrast(101%);
+}
+
+[data-theme="light"] .mobile-bottom-nav {
+    background: var(--nav-bg) !important;
+    border-top-color: var(--border-color) !important;
+    box-shadow: 0 -4px 24px rgba(18, 32, 44, 0.08) !important;
+}
+
+[data-theme="light"] .site-search-backdrop {
+    background: var(--overlay-bg);
+}
+
+[data-theme="light"] .site-search-panel {
+    box-shadow: 0 24px 64px rgba(18, 32, 44, 0.18);
+}
+
+[data-theme="light"] .site-search-footer,
+[data-theme="light"] .site-search-input-wrap,
+[data-theme="light"] .alert,
+[data-theme="light"] .header-search-btn .search-kbd,
+[data-theme="light"] .con-event-header,
+[data-theme="light"] .doc-header,
+[data-theme="light"] .active-filters {
+    border-color: var(--hairline);
+}
+
+[data-theme="light"] .header-search-btn .search-kbd {
+    border-color: var(--border-color);
+}
+
+[data-theme="light"] .page-title {
+    background: linear-gradient(135deg, var(--text-primary), var(--accent-color));
+    -webkit-background-clip: text;
+    background-clip: text;
+}
+
+[data-theme="light"] .btn,
+[data-theme="light"] .btn-download,
+[data-theme="light"] .main-search-btn {
+    color: var(--on-primary);
+}
+
+[data-theme="light"] .header.is-scrolled {
+    box-shadow: 0 4px 24px rgba(18, 32, 44, 0.08);
+}
+
+[data-theme="light"] .footer-friends-scroller {
+    scrollbar-color: rgba(18, 32, 44, 0.25) transparent;
+}
+
+[data-theme="light"] .footer-friends-scroller::-webkit-scrollbar-thumb {
+    background: rgba(18, 32, 44, 0.25);
+}
+
+[data-theme="light"] .footer-friend:hover {
+    background: rgba(18, 32, 44, 0.05);
+}
+
+[data-theme="light"] .meta-chip,
+[data-theme="light"] .back-btn {
+    background: var(--chip-fill);
+    border-color: var(--surface-border);
+}
+
+[data-theme="light"] .skeleton-shimmer {
+    background: linear-gradient(
+        90deg,
+        var(--bg-tertiary) 0%,
+        rgba(18, 32, 44, 0.04) 40%,
+        rgba(18, 32, 44, 0.1) 50%,
+        rgba(18, 32, 44, 0.04) 60%,
+        var(--bg-tertiary) 100%
+    );
+    background-size: 400% 100%;
+}
+
+[data-theme="light"] ::selection {
+    background: rgba(0, 127, 168, 0.22);
+    color: var(--text-primary);
+}
+
+/* Keep year/section chips and document filters from clipping. */
+.year-tabs,
+.content-tabs,
+.results-controls,
+.filter-row,
+.year-quick,
+.doc-meta-chips,
+.active-filters {
+    flex-wrap: wrap;
+    overflow: visible;
+}
+
+.results-header {
+    align-items: flex-start;
+}
+
+@media (max-width: 768px) {
+    .theme-toggle {
+        width: 2.75rem;
+        height: 2.75rem;
+    }
+
+    .filter-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .results-controls {
+        width: 100%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .theme-toggle,
+    .header,
+    .footer,
+    body {
+        transition: none;
+    }
+}

@@ -1,0 +1,78 @@
+{% extends 'archive/admin/base_admin.html' %}
+
+{% block title %}Site Banner - Admin{% endblock %}
+
+{% block content %}
+<div style="display:grid;grid-template-columns:minmax(320px,1fr) minmax(320px,1fr);gap:1.5rem;align-items:start;">
+    <div class="card">
+        <h3 style="margin-bottom:1rem;"><i class="bi bi-megaphone"></i> Configure Site Banner</h3>
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="{{ form.text.id_for_label }}">Banner Text</label>
+                {{ form.text }}
+                {% if form.text.errors %}
+                    <ul class="errorlist">{% for error in form.text.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                {% endif %}
+                <span class="helptext">{{ form.text.help_text }}</span>
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.url.id_for_label }}">Banner Link (optional)</label>
+                {{ form.url }}
+                {% if form.url.errors %}
+                    <ul class="errorlist">{% for error in form.url.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                {% endif %}
+                <span class="helptext">{{ form.url.help_text }}</span>
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.color.id_for_label }}">Bar Color</label>
+                {{ form.color }}
+                {% if form.color.errors %}
+                    <ul class="errorlist">{% for error in form.color.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                {% endif %}
+                <span class="helptext">{{ form.color.help_text }}</span>
+            </div>
+
+            <div class="form-group">
+                <label style="display:flex;gap:0.6rem;align-items:center;">
+                    {{ form.is_enabled }}
+                    Show banner on public pages
+                </label>
+                {% if form.is_enabled.errors %}
+                    <ul class="errorlist">{% for error in form.is_enabled.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                {% endif %}
+            </div>
+
+            <button type="submit" class="btn btn-success"><i class="bi bi-save"></i> Save Banner</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h3 style="margin-bottom:1rem;"><i class="bi bi-eye"></i> Live Preview</h3>
+        <div style="border:1px solid var(--border-color);border-radius:10px;overflow:hidden;">
+            {% if preview_banner %}
+                {% if preview_banner.link_url %}
+                <a href="{{ preview_banner.link_url }}" style="display:block;background: {{ preview_banner.color }}; color:#fff; text-align:center; font-weight:700; padding:0.75rem 1rem; letter-spacing:0.2px; text-shadow:0 1px 2px rgba(0,0,0,0.35);text-decoration:none;"{% if preview_banner.opens_externally %} target="_blank" rel="noopener noreferrer"{% endif %}>
+                    {{ preview_banner.text }}
+                </a>
+                {% else %}
+                <div style="background: {{ preview_banner.color }}; color:#fff; text-align:center; font-weight:700; padding:0.75rem 1rem; letter-spacing:0.2px; text-shadow:0 1px 2px rgba(0,0,0,0.35);">
+                    {{ preview_banner.text }}
+                </div>
+                {% endif %}
+                <div style="padding:0.8rem 1rem;color:var(--text-secondary);font-size:0.9rem;">
+                    This is currently visible on the public site.
+                    {% if preview_banner.link_url %}
+                    <br>Link: <code>{{ preview_banner.link_url }}</code>
+                    {% endif %}
+                </div>
+            {% else %}
+                <div style="padding:1rem;color:var(--text-muted);">No active banner is currently visible.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,283 @@
+{% load static %}
+{% with panel_suffix=document.slug %}
+<div class="doc-content-grid">
+    <aside class="doc-sidebar">
+        <div class="preview-box">
+            <img data-doc-thumb="1"
+                 data-original-src="{% url 'pdf_page_image' document.slug 1 %}"
+                 src="{% static 'archive/placeholder.jpg' %}"
+                 alt="Page 1 preview of {{ document.title }}">
+        </div>
+
+        <div class="quick-stats">
+            {% if consurf_event_year %}
+            <div class="stat-row">
+                <span class="stat-label">Year</span>
+                <span class="stat-value">{{ consurf_event_year }}</span>
+            </div>
+            {% elif document.year %}
+            <div class="stat-row">
+                <span class="stat-label">Year</span>
+                <span class="stat-value">{{ document.year }}</span>
+            </div>
+            {% endif %}
+
+            {% if consurf_event_address %}
+            <div class="stat-row">
+                <span class="stat-label">Address</span>
+                <span class="stat-value">{{ consurf_event_address }}</span>
+            </div>
+            {% endif %}
+
+            {% if not consurf_event_year and consurf_event and consurf_event.start_date %}
+            <div class="stat-row">
+                <span class="stat-label">Event Date(s)</span>
+                <span class="stat-value">{{ consurf_event.start_date|date:"M d" }} - {{ consurf_event.end_date|date:"d, Y" }}</span>
+            </div>
+            {% endif %}
+
+            <div class="stat-row">
+                <span class="stat-label">Page Count</span>
+                <span class="stat-value">{{ document.page_count|default:"N/A" }}</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">File Size</span>
+                <span class="stat-value">{{ document.file_size|filesizeformat|default:"Unknown" }}</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Document Views</span>
+                <span class="stat-value">{{ document_pdf_views|default:0 }}</span>
+            </div>
+
+            {% if consurf_event and consurf_event.start_date %}
+            <div class="stat-row stat-powered-by">
+                {% if consurf_event.source == 'mlpcon' %}
+                <span class="stat-credit">Event data powered by <a href="https://mlpcon.info" target="_blank" rel="noopener noreferrer">MLPCON.INFO</a></span>
+                {% else %}
+                <span class="stat-credit">Event data powered by <a href="https://consurf.net" target="_blank" rel="noopener noreferrer">Consurf</a></span>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </aside>
+
+    <main class="doc-main">
+        <div class="action-bar">
+            {% if ia_mirrors.available and ia_mirrors.options %}
+            <div class="download-split has-mirrors" id="download-split-{{ panel_suffix }}">
+                <a href="{% url 'document_download' document.slug %}" class="btn-download download-split-main">
+                    <i class="bi bi-download"></i>
+                    Download PDF
+                </a>
+                <button type="button" class="download-split-toggle" id="download-split-toggle-{{ panel_suffix }}"
+                    aria-label="More download options" aria-expanded="false" aria-haspopup="menu">
+                    <i class="bi bi-chevron-down"></i>
+                </button>
+                <div class="download-split-menu" id="download-split-menu-{{ panel_suffix }}" role="menu" hidden>
+                    {% for option in ia_mirrors.options %}
+                    <a href="{{ option.url }}" target="_blank" rel="noopener noreferrer" role="menuitem">
+                        {% if option.type == 'mirror' %}
+                        <i class="bi bi-cloud-download"></i>
+                        {% elif option.type == 'torrent' %}
+                        <i class="bi bi-magnet"></i>
+                        {% else %}
+                        <i class="bi bi-box-arrow-up-right"></i>
+                        {% endif %}
+                        <span>{{ option.label }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <a href="{% url 'document_download' document.slug %}" class="btn-download">
+                <i class="bi bi-download"></i>
+                Download PDF
+            </a>
+            {% endif %}
+            <a href="{% url 'document_view' document.slug %}" class="btn-view">
+                <i class="bi bi-file-earmark-pdf"></i>
+                View PDF
+            </a>
+        </div>
+
+        {% if ia_mirrors.available and ia_mirrors.options %}
+        <script>
+        (function() {
+            var split = document.getElementById('download-split-{{ panel_suffix }}');
+            var toggle = document.getElementById('download-split-toggle-{{ panel_suffix }}');
+            var menu = document.getElementById('download-split-menu-{{ panel_suffix }}');
+            if (!split || !toggle || !menu) return;
+
+            function closeMenu() {
+                menu.hidden = true;
+                toggle.setAttribute('aria-expanded', 'false');
+            }
+
+            toggle.addEventListener('click', function(event) {
+                event.stopPropagation();
+                if (menu.hidden) {
+                    menu.hidden = false;
+                    toggle.setAttribute('aria-expanded', 'true');
+                } else {
+                    closeMenu();
+                }
+            });
+
+            document.addEventListener('click', function(event) {
+                if (!split.contains(event.target)) {
+                    closeMenu();
+                }
+            });
+
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape') {
+                    closeMenu();
+                }
+            });
+        })();
+        </script>
+        {% endif %}
+
+        {% if consurf_event %}
+        <div class="info-section">
+            <h2 class="section-title">
+                <i class="bi bi-calendar2-event"></i>
+                Convention Information
+            </h2>
+
+            {% if event_display_description %}
+            <div class="convention-description">
+                <p>{{ event_display_description }}</p>
+            </div>
+            {% else %}
+            <div class="convention-description">
+                {% if consurf_event.source == 'mlpcon' %}
+                <p>No description is available for this convention yet. If you know the details, please fill out the MLPCON.INFO form below.</p>
+                {% else %}
+                <p>No description is available for this convention yet. If you know the details, please submit one via Consurf.</p>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <div class="consurf-actions">
+                {% if consurf_event.source == 'mlpcon' %}
+                    {% with mlpcon_slug=consurf_event.name|default:document.convention_name|default:document.category.name|slugify|cut:"-" %}
+                    <a href="https://mlpcon.info/{{ mlpcon_slug }}" target="_blank" rel="noopener noreferrer" class="consurf-button">
+                        <img src="https://mlpcon.info/favicon.ico" alt="MLPCON.INFO" class="consurf-favicon">
+                        <span>View on MLPCON.INFO</span>
+                    </a>
+                    {% endwith %}
+                {% else %}
+                    <a href="{{ consurf_convention_url|default:consurf_event.url }}" target="_blank" rel="noopener noreferrer" class="consurf-button">
+                        <img src="https://consurf.net/favicon.ico" alt="Consurf" class="consurf-favicon">
+                        <span>View on Consurf</span>
+                    </a>
+                {% endif %}
+            </div>
+
+            <div class="consurf-credit">
+                {% if consurf_event.source == 'mlpcon' %}
+                <span class="consurf-powered-by">Event data powered by MLPCON.INFO</span>
+                {% else %}
+                <span class="consurf-powered-by">Event data powered by <a href="https://consurf.net" target="_blank" rel="noopener noreferrer">Consurf</a></span>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if document.contributor_notes %}
+        <div class="info-section">
+            <h2 class="section-title">
+                <i class="bi bi-chat-quote"></i>
+                Contributor Notes
+            </h2>
+            <div class="notes-content">{{ document.contributor_notes|linebreaksbr }}</div>
+        </div>
+        {% endif %}
+
+        <div class="info-section">
+            <h2 class="section-title">
+                <i class="bi bi-shield-check"></i>
+                Rights & Licensing
+            </h2>
+
+            <div class="license-info">
+                <div class="license-item">
+                    <span class="license-item-label">License</span>
+                    <span class="license-item-value">
+                        {% if document.creative_commons_license %}
+                            {% with cc=document.creative_commons_license %}
+                                {% if cc == 'CC0' %}CC0 - Public Domain Dedication
+                                {% elif cc == 'CC-BY' %}CC BY - Attribution
+                                {% elif cc == 'CC-BY-SA' %}CC BY-SA - Attribution-ShareAlike
+                                {% elif cc == 'CC-BY-ND' %}CC BY-ND - Attribution-NoDerivs
+                                {% elif cc == 'CC-BY-NC' %}CC BY-NC - Attribution-NonCommercial
+                                {% elif cc == 'CC-BY-NC-SA' %}CC BY-NC-SA - Attribution-NonCommercial-ShareAlike
+                                {% elif cc == 'CC-BY-NC-ND' %}CC BY-NC-ND - Attribution-NonCommercial-NoDerivs
+                                {% elif cc == 'ALL-RIGHTS-RESERVED' %}All Rights Reserved
+                                {% elif cc == 'PERMISSION-GRANTED' %}Explicit Permission Granted
+                                {% else %}No License Specified{% endif %}
+                            {% endwith %}
+                        {% else %}
+                            No License Specified
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="license-item">
+                    <span class="license-item-label">Copyright Holder</span>
+                    <span class="license-item-value">
+                        {% if document.copyright_holder %}
+                            {{ document.copyright_holder }}
+                        {% else %}
+                            Not Specified
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+
+            {% if document.license %}
+            <div class="permissions">
+                <div class="permission allowed">
+                    <div class="permission-icon"><i class="bi bi-check-circle-fill"></i></div>
+                    <div class="permission-text">
+                        <h4>Attribution</h4>
+                        <p>Give credit to the creator</p>
+                    </div>
+                </div>
+
+                <div class="permission {% if 'NC' in document.license %}denied{% else %}allowed{% endif %}">
+                    <div class="permission-icon"><i class="bi bi-{% if 'NC' in document.license %}x-circle-fill{% else %}check-circle-fill{% endif %}"></i></div>
+                    <div class="permission-text">
+                        <h4>Commercial Use</h4>
+                        <p>{% if 'NC' in document.license %}Not for commercial{% else %}Commercial use allowed{% endif %}</p>
+                    </div>
+                </div>
+
+                <div class="permission {% if 'ND' in document.license %}denied{% else %}allowed{% endif %}">
+                    <div class="permission-icon"><i class="bi bi-{% if 'ND' in document.license %}x-circle-fill{% else %}check-circle-fill{% endif %}"></i></div>
+                    <div class="permission-text">
+                        <h4>Adaptation</h4>
+                        <p>{% if 'ND' in document.license %}Cannot modify{% else %}You may modify{% endif %}</p>
+                    </div>
+                </div>
+
+                <div class="permission allowed">
+                    <div class="permission-icon"><i class="bi bi-check-circle-fill"></i></div>
+                    <div class="permission-text">
+                        <h4>Distribution</h4>
+                        <p>Share with others</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="info-box">
+                <p>
+                    <strong>📚 Fair Use & Educational Use</strong><br><br>
+                    This archive preserves these documents for educational, archival, and community purposes. Fair use doctrine permits this preservation and access for the cultural benefit of the furry community. <a href="{% url 'rights' %}">Learn more.</a>
+                </p>
+            </div>
+        </div>
+    </main>
+</div>
+{% endwith %}

@@ -1,0 +1,90 @@
+{% extends 'archive/admin/base_admin.html' %}
+
+{% block title %}FAQ entries - Admin{% endblock %}
+
+{% block content %}
+<div style="display: grid; grid-template-columns: minmax(320px, 1fr) minmax(420px, 1.4fr); gap: 1.5rem; align-items: start;">
+    <div class="card">
+        <h3 style="margin-bottom: 1rem;">Add FAQ entry</h3>
+        <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+            These answers appear on the website FAQ and in the Android app. HTML is allowed.
+        </p>
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="{{ form.question.id_for_label }}">Question *</label>
+                {{ form.question }}
+                {{ form.question.errors }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.answer.id_for_label }}">Answer *</label>
+                {{ form.answer }}
+                <span class="helptext">{{ form.answer.help_text }}</span>
+                {{ form.answer.errors }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.icon.id_for_label }}">Icon</label>
+                {{ form.icon }}
+                <span class="helptext">{{ form.icon.help_text }}</span>
+                {{ form.icon.errors }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.order.id_for_label }}">Order</label>
+                {{ form.order }}
+                {{ form.order.errors }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.slug.id_for_label }}">Slug</label>
+                {{ form.slug }}
+                <span class="helptext">{{ form.slug.help_text }}</span>
+                {{ form.slug.errors }}
+            </div>
+            <div class="form-group">
+                <label style="display:flex;gap:0.6rem;align-items:center;">
+                    {{ form.is_published }}
+                    Published
+                </label>
+            </div>
+            <button type="submit" class="btn btn-success"><i class="bi bi-plus-circle"></i> Add entry</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h3 style="margin-bottom: 1rem;">Published and draft entries</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Order</th>
+                    <th>Question</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in faq_entries %}
+                <tr>
+                    <td>{{ entry.order }}</td>
+                    <td>
+                        <strong>{{ entry.question }}</strong>
+                        <div style="color: var(--text-muted); font-size: 0.85rem;">{{ entry.slug }}</div>
+                    </td>
+                    <td>{% if entry.is_published %}Published{% else %}Draft{% endif %}</td>
+                    <td>
+                        <div class="actions">
+                            <a href="{% url 'admin_edit_faq' entry.id %}" class="btn btn-small btn-secondary">Edit</a>
+                            <a href="{% url 'admin_delete_faq' entry.id %}" class="btn btn-small btn-danger">Delete</a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                        No FAQ entries yet. Add one on the left.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

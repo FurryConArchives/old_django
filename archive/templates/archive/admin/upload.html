@@ -1,0 +1,551 @@
+{% extends 'archive/admin/base_admin.html' %}
+
+{% block title %}{{ page_title }} - Admin{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+<style>
+        .tomselect-custom-avatar .ts-control {
+            min-height: 44px;
+        }
+        .tomselect-custom-avatar .ts-dropdown .option img,
+        .tomselect-custom-avatar .ts-control .item img {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            margin-right: 7px;
+            vertical-align: middle;
+        }
+    .form-section {
+        margin-bottom: 2.5rem;
+        padding-bottom: 2rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .form-section:last-of-type {
+        border-bottom: none;
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-section-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .form-section-title i {
+        color: var(--accent-color);
+    }
+    
+    .form-grid-2 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+    }
+    
+    .file-input-wrapper {
+        position: relative;
+    }
+    
+    .file-input-label {
+        display: inline-block;
+        padding: 0.75rem 1.5rem;
+        background: var(--bg-tertiary);
+        border: 2px solid var(--border-color);
+        border-radius: var(--radius-sm);
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .file-input-label:hover {
+        background: var(--bg-secondary);
+        border-color: var(--primary-color);
+    }
+    
+    .file-input-wrapper input[type="file"] {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    
+    .file-name-display {
+        margin-top: 0.75rem;
+        padding: 0.75rem 1rem;
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-sm);
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .file-name-display i {
+        color: var(--accent-color);
+    }
+    
+    .options-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+
+    /* TomSelect visibility fixes */
+    .ts-control {
+        opacity: 1 !important;
+        color: var(--text-primary) !important;
+        background: var(--bg-secondary) !important;
+    }
+    .ts-control .item {
+        opacity: 1 !important;
+        color: var(--text-primary) !important;
+        background: var(--bg-tertiary) !important;
+    }
+    .ts-dropdown .option {
+        opacity: 1 !important;
+        color: var(--text-primary) !important;
+    }
+    .ts-dropdown .option.selected {
+        background: var(--accent-color) !important;
+        color: #fff !important;
+    }
+    .ts-control input {
+        opacity: 1 !important;
+        color: var(--text-primary) !important;
+    }
+        gap: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <form method="post" enctype="multipart/form-data" id="uploadForm">
+        {% csrf_token %}
+        
+        {% if form.non_field_errors %}
+            <div class="alert alert-error">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+        
+        <!-- Basic Information -->
+        <div class="form-section">
+            <h3 class="form-section-title">
+                <i class="bi bi-file-earmark-text"></i>
+                Basic Information
+            </h3>
+            
+            <div class="form-group">
+                            <div id="donor-avatars" style="margin-top: 0.5rem; display: flex; gap: 0.5rem;"></div>
+                <label for="{{ form.title.id_for_label }}">Title *</label>
+                {{ form.title }}
+                {% if form.title.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.title.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+            
+            {% if form.slug %}
+            <div class="form-group">
+                <label for="{{ form.slug.id_for_label }}">URL Slug</label>
+                {{ form.slug }}
+                <span class="helptext">{{ form.slug.help_text }}</span>
+                {% if form.slug.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.slug.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            <div class="form-group">
+                <label for="{{ form.file.id_for_label }}">PDF File *</label>
+                <div class="file-input-wrapper">
+                    <label for="{{ form.file.id_for_label }}" class="file-input-label">
+                        <i class="bi bi-cloud-upload"></i>
+                        Choose File
+                    </label>
+                    {{ form.file }}
+                    <div class="file-name-display" id="fileNameDisplay" style="display: none;">
+                        <i class="bi bi-file-pdf"></i>
+                        <span id="fileNameText">No file selected</span>
+                    </div>
+                </div>
+                <span class="helptext">{{ form.file.help_text }}</span>
+                {% if form.file.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.file.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+                {% if document.file %}
+                    <p style="margin-top: 0.5rem; color: var(--text-muted);">Current file: {{ document.filename }}</p>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.description.id_for_label }}">Description</label>
+                {{ form.description }}
+                {% if form.description.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.description.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Document Details -->
+        <div class="form-section">
+            <h3 class="form-section-title">
+                <i class="bi bi-info-circle"></i>
+                Document Details
+            </h3>
+            
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label for="{{ form.year.id_for_label }}">Year</label>
+                    {{ form.year }}
+                    <span class="helptext">Page count will be automatically extracted</span>
+                    {% if form.year.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.year.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.convention_name.id_for_label }}">Convention Name</label>
+                    <input type="text" id="id_convention_name" name="convention_name" class="form-control" list="convention-list" value="{{ form.convention_name.value|default:'' }}" placeholder="e.g., Anthrocon">
+                    <datalist id="convention-list">
+                        {% for cname in convention_names %}
+                            <option value="{{ cname }}">{{ cname }}</option>
+                        {% endfor %}
+                    </datalist>
+                    {% if form.convention_name.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.convention_name.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.category.id_for_label }}">Category</label>
+                <select id="id_category" name="category" class="form-control tomselect-basic">
+                    {% for option in form.category.field.choices %}
+                        <option value="{{ option.0 }}" {% if option.0 == form.category.value %}selected{% endif %}>{{ option.1 }}</option>
+                    {% endfor %}
+                </select>
+                <span class="helptext">Select the category for this document</span>
+                {% if form.category.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.category.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.tags.id_for_label }}">Tags</label>
+                <select id="id_tags" name="tags" class="form-control tomselect-tags">
+                    <option value="">---------</option>
+                    {% for tag in form.tags.field.queryset %}
+                        <option value="{{ tag.id }}" {% if form.tags.value == tag.id %}selected{% endif %}>{{ tag.name }}</option>
+                    {% endfor %}
+                </select>
+                <span class="helptext">Select a tag, or type to create a new one</span>
+                {% if form.tags.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.tags.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Attribution -->
+        <div class="form-section">
+            <h3 class="form-section-title">
+                <i class="bi bi-person-badge"></i>
+                Attribution
+            </h3>
+            
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label for="{{ form.author.id_for_label }}">Author</label>
+                    <input type="text" id="id_author" name="author" class="form-control" list="author-list" value="{{ form.author.value|default:'' }}" placeholder="e.g., Artist Name">
+                    <datalist id="author-list">
+                        {% for aname in author_names %}
+                            <option value="{{ aname }}">{{ aname }}</option>
+                        {% endfor %}
+                    </datalist>
+                    {% if form.author.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.author.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            {% block extra_js %}
+            <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+            <script>
+            // Basic TomSelect for category only
+            new TomSelect('#id_category', { create: false, persist: false, allowEmptyOption: true });
+
+            // Tags: allow selecting existing tags and creating new ones
+            new TomSelect('#id_tags', {
+                persist: false,
+                create: true,
+                allowEmptyOption: true,
+                maxItems: 1,
+            });
+
+            // Donated By with avatar support (Telegram/Discord)
+            const donorSelect = new TomSelect('#id_donated_by', {
+                plugins: ['remove_button'],
+                persist: false,
+                create: false,
+                render: {
+                    option: function(data, escape) {
+                        return `<div><img src="${escape(data.avatar||'')}" style="width:22px;height:22px;border-radius:50%;margin-right:7px;vertical-align:middle;">${escape(data.text)}</div>`;
+                    },
+                    item: function(data, escape) {
+                        return `<div><img src="${escape(data.avatar||'')}" style="width:18px;height:18px;border-radius:50%;margin-right:5px;vertical-align:middle;">${escape(data.text)}</div>`;
+                    }
+                }
+            });
+
+            async function fetchDiscordUser(discordId) {
+                try {
+                    const resp = await fetch(`/internal/api/discord-user/${encodeURIComponent(discordId)}`);
+                    if (!resp.ok) return null;
+                    return await resp.json();
+                } catch { return null; }
+            }
+
+            async function fetchTelegramUser(username) {
+                try {
+                    const resp = await fetch(`/internal/api/telegram-user/${encodeURIComponent(username)}`);
+                    if (!resp.ok) return null;
+                    const data = await resp.json();
+                    return data.display_name || null;
+                } catch { return null; }
+            }
+
+            function fetchDonorAvatar(type, usernameOrId) {
+                if (!usernameOrId) return '';
+                if (type === 'telegram') {
+                    return `/internal/api/telegram-avatar/${encodeURIComponent(usernameOrId)}`;
+                } else if (type === 'discord') {
+                    // proxy discord avatar
+                    return `/internal/api/discord-avatar/${encodeURIComponent(usernameOrId)}`;
+                }
+                return '';
+            }
+
+            document.getElementById('add-donor-btn').onclick = async function() {
+                const type = document.getElementById('donor-type').value;
+                let username = document.getElementById('donor-username').value.trim();
+                if (!username) return;
+                let label = '';
+                let avatar = '';
+                if (type === 'telegram') {
+                    if (username.startsWith('@')) username = username.slice(1);
+                    const displayName = await fetchTelegramUser(username);
+                    const cleanDisplayName = displayName || username;
+                    label = `Telegram: ${cleanDisplayName} (${username})`;
+                    avatar = fetchDonorAvatar(type, username);
+                } else if (type === 'discord') {
+                    const userData = await fetchDiscordUser(username);
+                    if (userData && userData.username) {
+                        const displayName = userData.display_name || userData.username;
+                        const discordId = userData.id || username;
+                        label = `Discord: ${displayName}||${discordId}`;
+                        avatar = fetchDonorAvatar(type, discordId);
+                    } else {
+                        label = 'Discord: ' + username;
+                        avatar = fetchDonorAvatar(type, username);
+                    }
+                }
+                donorSelect.addOption({value: label, text: label, avatar: avatar});
+                donorSelect.addItem(label);
+                // Show avatar preview
+                const avatarsDiv = document.getElementById('donor-avatars');
+                const img = document.createElement('img');
+                img.src = avatar;
+                img.alt = label;
+                avatarsDiv.appendChild(img);
+                document.getElementById('donor-username').value = '';
+            };
+
+            // Hide Donated By for digital (not scanned)
+            const isScannedCheckbox = document.getElementById('id_is_scanned');
+            const donatedByGroup = document.getElementById('id_donated_by').closest('.form-group');
+            function toggleDonatedBy() {
+                if (isScannedCheckbox && donatedByGroup) {
+                    donatedByGroup.style.display = isScannedCheckbox.checked ? '' : 'none';
+                }
+            }
+            if (isScannedCheckbox && donatedByGroup) {
+                isScannedCheckbox.addEventListener('change', toggleDonatedBy);
+                toggleDonatedBy();
+            }
+            </script>
+            {% endblock %}
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.contributor_notes.id_for_label }}">Contributor Notes</label>
+                {{ form.contributor_notes }}
+                <span class="helptext">{{ form.contributor_notes.help_text }}</span>
+                {% if form.contributor_notes.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.contributor_notes.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Copyright & Licensing -->
+        <div class="form-section">
+            <h3 class="form-section-title">
+                <i class="bi bi-shield-check"></i>
+                Copyright & Licensing
+            </h3>
+            
+            <div class="form-group">
+                <label for="{{ form.creative_commons_license.id_for_label }}">License Type</label>
+                {{ form.creative_commons_license }}
+                <span class="helptext">{{ form.creative_commons_license.help_text }}</span>
+                {% if form.creative_commons_license.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.creative_commons_license.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+            
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label for="{{ form.copyright_holder.id_for_label }}">Copyright Holder</label>
+                    {{ form.copyright_holder }}
+                    <span class="helptext">{{ form.copyright_holder.help_text }}</span>
+                    {% if form.copyright_holder.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.copyright_holder.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.copyright_year.id_for_label }}">Copyright Year</label>
+                    {{ form.copyright_year }}
+                    <span class="helptext">{{ form.copyright_year.help_text }}</span>
+                    {% if form.copyright_year.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.copyright_year.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            </div>
+            
+        </div>
+        
+        <!-- Document Options -->
+        <div class="form-section">
+            <h3 class="form-section-title">
+                <i class="bi bi-gear"></i>
+                Document Options
+            </h3>
+            
+            <div class="options-grid">
+                <div class="form-check">
+                    {{ form.is_scanned }}
+                    <label for="{{ form.is_scanned.id_for_label }}">
+                        <i class="bi bi-upc-scan"></i> Scanned Document
+                    </label>
+                    <span class="helptext">{{ form.is_scanned.help_text }}</span>
+                    {% if form.is_scanned.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.is_scanned.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+                
+                <div class="form-check">
+                    {{ form.is_published }}
+                    <label for="{{ form.is_published.id_for_label }}">
+                        <i class="bi bi-check-circle"></i> Publish Document
+                    </label>
+                    <span class="helptext">{{ form.is_published.help_text }}</span>
+                    {% if form.is_published.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.is_published.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div style="display: flex; gap: 1rem; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--border-color);">
+            <button type="submit" class="btn btn-success"><i class="bi bi-save"></i> Save Document</button>
+            <a href="{% url 'admin_documents' %}" class="btn btn-secondary"><i class="bi bi-x-circle"></i> Cancel</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    // File input display
+    const fileInput = document.querySelector('input[type="file"]');
+    const fileNameDisplay = document.getElementById('fileNameDisplay');
+    const fileNameText = document.getElementById('fileNameText');
+    
+    if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+            if (this.files && this.files.length > 0) {
+                fileNameText.textContent = this.files[0].name;
+                fileNameDisplay.style.display = 'flex';
+            } else {
+                fileNameDisplay.style.display = 'none';
+            }
+        });
+    }
+</script>
+{% endblock %}
+

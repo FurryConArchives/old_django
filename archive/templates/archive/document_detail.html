@@ -1,0 +1,102 @@
+{% extends 'archive/base.html' %}
+{% load static %}
+{% load archive_tags %}
+
+{% block title %}{{ document.title }} - Furry Con Archives{% endblock %}
+
+{% block extra_css %}
+<style>
+{% include 'archive/partials/document_detail_styles.html' %}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="document-container">
+    <!-- Header -->
+    <div class="doc-header">
+        <div class="doc-title-group">
+            <h1>{{ document.title }}</h1>
+            {% if document.category %}
+            <div class="breadcrumb">
+                <i class="bi bi-folder"></i>
+                <a href="{% url 'convention_detail' slug=document.category.slug %}">{{ document.category.name }}</a>
+            </div>
+            {% endif %}
+            <div class="doc-meta-chips">
+                {% if document.year %}
+                <span class="meta-chip"><i class="bi bi-calendar3"></i> {{ document.year }}</span>
+                {% endif %}
+                {% if document.convention_name %}
+                <span class="meta-chip"><i class="bi bi-building"></i> {{ document.convention_name }}</span>
+                {% endif %}
+                <span class="meta-chip"><i class="bi bi-eye"></i> {{ document_pdf_views|default:0 }} views</span>
+            </div>
+        </div>
+        <a href="{% url 'document_list' %}" class="back-btn">
+            <i class="bi bi-arrow-left"></i>
+            <span>Back</span>
+        </a>
+    </div>
+
+    {% include 'archive/partials/document_detail_panel.html' with document=document document_pdf_views=document_pdf_views ia_mirrors=ia_mirrors consurf_event=consurf_event consurf_event_year=consurf_event_year consurf_event_address=consurf_event_address event_display_description=event_display_description consurf_convention_url=consurf_convention_url %}
+
+    <!-- Related Documents -->
+    {% if related_documents %}
+    <div class="related-section">
+        <h2 class="section-title">
+            <i class="bi bi-files"></i>
+            Related Documents
+        </h2>
+        <div class="related-grid">
+            {% for doc in related_documents %}
+            <a href="{% url 'document_detail' doc.slug %}" class="related-card">
+                <div class="related-card-title">{{ doc.title }}</div>
+                <div class="related-card-meta">
+                    {% if doc.year %}
+                    <div class="related-card-meta-item">
+                        <i class="bi bi-calendar-event"></i> {{ doc.year }}
+                    </div>
+                    {% endif %}
+                    {% if doc.page_count %}
+                    <div class="related-card-meta-item">
+                        <i class="bi bi-file-pdf"></i> {{ doc.page_count }}p
+                    </div>
+                    {% endif %}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+    {% block extra_js %}
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        if (window.FCA && FCA.initDocThumbs) {
+            FCA.initDocThumbs();
+        }
+    });
+
+    // Staggered pop-in for related cards so they appear instantly with a little motion.
+    (function () {
+        function showRelatedCards() {
+            var cards = Array.prototype.slice.call(document.querySelectorAll('.related-card'));
+            if (!cards.length) return;
+            cards.forEach(function(card, i) {
+                // small stagger for nicer effect
+                setTimeout(function() {
+                    card.classList.add('animate');
+                }, i * 60);
+            });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', showRelatedCards);
+        } else {
+            showRelatedCards();
+        }
+    })();
+    </script>
+    {% endblock %}

@@ -1,0 +1,39 @@
+{% for category in categories %}
+<a href="{% url 'schedule_list' %}?category={{ category.slug }}" class="category-card">
+    <div class="category-logo-container">
+      {% if category.logo %}
+        <img src="{{ category.logo }}" alt="{{ category.name }} logo" class="category-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        <div class="category-logo-placeholder" style="display: none;">
+          <i class="bi bi-folder-fill"></i>
+        </div>
+      {% else %}
+        <div class="category-logo-placeholder">
+          <i class="bi bi-folder-fill"></i>
+        </div>
+      {% endif %}
+    </div>
+    <div class="category-content">
+      <h2 class="category-name">{{ category.name }}</h2>
+      <div class="category-info">
+        {% if category.location %}
+        <div class="info-item">
+          <i class="bi bi-geo-alt"></i>
+          <span><strong>Location:</strong> {{ category.location }}</span>
+        </div>
+        {% endif %}
+        {% if category.year_range %}
+        <div class="info-item">
+          <i class="bi bi-calendar-event"></i>
+          <span><strong>Active Years:</strong> {{ category.year_range }}</span>
+        </div>
+        {% endif %}
+      </div>
+      <div class="category-meta">
+        <div class="meta-badge">
+          <i class="bi bi-calendar-check"></i>
+          <span>{{ category.schedule_count }} schedule{{ category.schedule_count|pluralize }}</span>
+        </div>
+      </div>
+    </div>
+  </a>
+{% endfor %}

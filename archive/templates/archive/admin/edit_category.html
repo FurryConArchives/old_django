@@ -1,0 +1,101 @@
+{% extends 'archive/admin/base_admin.html' %}
+
+{% block title %}Edit Category - Admin{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h3 style="margin-bottom: 1rem;">Edit Category: {{ category.name }}</h3>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label for="{{ form.name.id_for_label }}">Category Name *</label>
+            {{ form.name }}
+            {% if form.name.errors %}
+                <ul class="errorlist">
+                    {% for error in form.name.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label for="{{ form.description.id_for_label }}">Description</label>
+            {{ form.description }}
+            {% if form.description.errors %}
+                <ul class="errorlist">
+                    {% for error in form.description.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label for="{{ form.parent.id_for_label }}">Parent Category</label>
+            {{ form.parent }}
+            <span class="helptext">{{ form.parent.help_text }}</span>
+            {% if form.parent.errors %}
+                <ul class="errorlist">
+                    {% for error in form.parent.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label for="{{ form.order.id_for_label }}">Display Order</label>
+            {{ form.order }}
+            <span class="helptext">{{ form.order.help_text }}</span>
+            {% if form.order.errors %}
+                <ul class="errorlist">
+                    {% for error in form.order.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label for="{{ form.logo_file.id_for_label }}">Logo (4:1 aspect ratio)</label>
+            {% if category.logo %}
+                <div style="margin-bottom: 0.5rem;">
+                    <img src="{{ category.logo }}" alt="{{ category.name }} logo" style="max-width: 300px; max-height: 75px; object-fit: contain; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.5rem; background: var(--bg-tertiary);">
+                    <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem;">Current logo (stored as base64)</p>
+                </div>
+            {% endif %}
+            {{ form.logo_file }}
+            <span class="helptext">{{ form.logo_file.help_text }}</span>
+            {% if form.logo_file.errors %}
+                <ul class="errorlist">
+                    {% for error in form.logo_file.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+            {{ form.logo }}
+        </div>
+        
+        <div class="form-group">
+            <label for="{{ form.location.id_for_label }}">Location</label>
+            {{ form.location }}
+            <span class="helptext">{{ form.location.help_text }}</span>
+            {% if form.location.errors %}
+                <ul class="errorlist">
+                    {% for error in form.location.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+        
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+            <button type="submit" class="btn btn-success">Save Changes</button>
+            <a href="{% url 'admin_categories' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+

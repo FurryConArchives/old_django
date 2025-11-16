@@ -1,0 +1,135 @@
+{% extends 'archive/base.html' %}
+{% block title %}Convention Dashboard{% endblock %}
+{% block content %}
+<style>
+  .con-dashboard-shell {
+    max-width: 720px;
+    margin: 3rem auto;
+    padding: 0 1rem;
+  }
+  .con-dashboard-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 2rem;
+  }
+  .con-dashboard-card h1 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+  }
+  .con-dashboard-card p {
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+  .con-dashboard-form {
+    display: grid;
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+  .con-dashboard-form label {
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .con-dashboard-form input {
+    width: 100%;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem 0.9rem;
+    font-size: 1rem;
+  }
+  .con-dashboard-form button {
+    justify-self: start;
+  }
+  .error-banner {
+    margin-top: 1rem;
+    padding: 0.8rem 1rem;
+    border-radius: var(--radius-sm);
+    background: rgba(255, 76, 76, 0.12);
+    border: 1px solid rgba(255, 76, 76, 0.35);
+    color: #ffb5b5;
+  }
+
+  .analytics-loading-overlay {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(8, 12, 18, 0.82);
+    z-index: 5000;
+    backdrop-filter: blur(2px);
+  }
+
+  .analytics-loading-overlay.active {
+    display: flex;
+  }
+
+  .analytics-loading-card {
+    max-width: 420px;
+    width: calc(100% - 2rem);
+    text-align: center;
+    background: var(--bg-secondary);
+    border: 1px solid rgba(0, 212, 255, 0.45);
+    border-radius: var(--radius);
+    padding: 1.2rem 1rem;
+    box-shadow: var(--shadow);
+  }
+
+  .analytics-loading-spinner {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 3px solid rgba(0, 212, 255, 0.2);
+    border-top-color: rgba(0, 212, 255, 0.95);
+    margin: 0 auto 0.85rem;
+    animation: analyticsSpin 0.9s linear infinite;
+  }
+
+  @keyframes analyticsSpin {
+    to { transform: rotate(360deg); }
+  }
+</style>
+<div id="analyticsLoadingOverlay" class="analytics-loading-overlay" aria-live="polite" aria-busy="true">
+  <div class="analytics-loading-card">
+    <div class="analytics-loading-spinner"></div>
+    <div>Opening dashboard and loading analytics. Please wait...</div>
+  </div>
+</div>
+<div class="con-dashboard-shell">
+  <div class="con-dashboard-card">
+    <h1>Convention Dashboard</h1>
+    <p>Enter your app key to access the analytics dashboard for your convention.</p>
+    <form method="post" class="con-dashboard-form">
+      {% csrf_token %}
+      <div>
+        <label for="app_key">App Key</label>
+        <input id="app_key" name="app_key" autocomplete="off" placeholder="Paste your app key here" required>
+      </div>
+      <button class="btn btn-success" type="submit">Open Dashboard</button>
+    </form>
+    {% if error %}
+    <div class="error-banner">{{ error }}</div>
+    {% endif %}
+  </div>
+</div>
+<script>
+  function showAnalyticsLoading() {
+    const overlay = document.getElementById('analyticsLoadingOverlay');
+    if (overlay) {
+      overlay.classList.add('active');
+    }
+  }
+
+  window.addEventListener('beforeunload', showAnalyticsLoading);
+
+  const dashboardForm = document.querySelector('.con-dashboard-form');
+  if (dashboardForm) {
+    dashboardForm.addEventListener('submit', function() {
+      showAnalyticsLoading();
+    });
+  }
+</script>
+{% endblock %}

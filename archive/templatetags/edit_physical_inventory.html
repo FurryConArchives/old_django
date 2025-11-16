@@ -1,0 +1,210 @@
+
+{% extends 'archive/admin/base_admin.html' %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+<style>
+    .donor-selector-group {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+        align-items: flex-end;
+    }
+    #donor-avatars {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+    }
+    #donor-avatars img {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: 2px solid var(--accent-color);
+        object-fit: cover;
+    }
+    .ts-control {
+        background: var(--bg-tertiary) !important;
+        border-color: var(--border-color) !important;
+        color: var(--text-primary) !important;
+    }
+    .ts-dropdown {
+        background: var(--bg-secondary) !important;
+        border-color: var(--border-color) !important;
+    }
+    .ts-dropdown .option {
+        color: var(--text-primary) !important;
+        padding: 0.75rem !important;
+    }
+    .ts-dropdown .option.selected {
+        background: var(--accent-color) !important;
+    }
+    .ts-dropdown .option:hover {
+        background: var(--bg-tertiary) !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>{{ page_title }}</h1>
+<form method="post" autocomplete="off" style="max-width: 600px; margin: 2rem auto; background: var(--bg-secondary); border-radius: 16px; padding: 2rem; box-shadow: 0 4px 24px rgba(0,0,0,0.12);">
+    {% csrf_token %}
+    <div class="form-group" style="margin-bottom: 1.2rem;">
+        <label for="con">Convention Name</label>
+        <input type="text" name="con" id="con" class="form-control" value="{{ item.con }}" required>
+    </div>
+    <div class="form-group" style="margin-bottom: 1.2rem;">
+        <label for="year">Year</label>
+        <input type="number" name="year" id="year" class="form-control" value="{{ item.year|default:'' }}" min="1980">
+    </div>
+    <div class="form-group" style="margin-bottom: 1.2rem;">
+        <label for="item_type">Item Type</label>
+        <input type="text" id="id_item_type" name="item_type" class="form-control tomselect-basic" value="{{ item.item_type|default:'' }}">
+    </div>
+    <div class="form-group" style="margin-bottom: 1.2rem;">
+        <label for="quantity">Quantity</label>
+        <input type="number" name="quantity" id="quantity" class="form-control" value="{{ item.quantity }}" min="1" required>
+    </div>
+    <div class="form-group" style="margin-bottom: 1.2rem;">
+        <label>Donators</label>
+        <div class="donor-selector-group">
+            <div style="display: grid; grid-template-columns: 1fr auto; gap: 0.5rem;">
+                <input type="text" id="donor-username" class="form-control" placeholder="telegram username or Discord ID" style="margin-bottom: 0;">
+                <select id="donor-type" class="form-control" style="flex-shrink: 0; width: auto; margin-bottom: 0;">
+                    <option value="telegram">Telegram</option>
+                    <option value="discord">Discord</option>
+                </select>
+            </div>
+            <button type="button" id="add-donor-btn" class="btn btn-primary" style="margin-bottom: 0;">Add</button>
+        </div>
+        <div id="donor-avatars"></div>
+        <select id="id_donators" name="donators" class="form-control" multiple style="display: none;"></select>
+        <input type="hidden" id="donators-hidden" name="donators" value="{{ item.donators }}">
+    </div>
+    <div class="form-group" style="margin-bottom: 1.2rem;">
+        <label for="notes">Notes</label>
+        <textarea name="notes" id="notes" class="form-control" rows="2">{{ item.notes }}</textarea>
+    </div>
+    <button type="submit" class="btn btn-success" style="width: 100%; margin-top: 1rem;">
+        <i class="bi bi-save"></i> Save Changes
+    </button>
+    <a href="{% url 'admin_physical_inventory' %}" class="btn btn-secondary" style="width: 100%; margin-top: 0.5rem;">Cancel</a>
+</form>
+
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+<script>
+const donorSelect = new TomSelect('#id_donators', {
+    plugins: ['remove_button'],
+    persist: false,
+    create: false,
+    render: {
+        option: function(data, escape) {
+            return `<div><img src="${escape(data.avatar||'')}" style="width:22px;height:22px;border-radius:50%;margin-right:7px;vertical-align:middle;">${escape(data.text)}</div>`;
+        },
+        item: function(data, escape) {
+            return `<div><img src="${escape(data.avatar||'')}" style="width:18px;height:18px;border-radius:50%;margin-right:5px;vertical-align:middle;">${escape(data.text)}</div>`;
+        }
+    }
+});
+
+async function fetchDiscordUser(discordId) {
+    try {
+        const resp = await fetch(`/internal/api/discord-user/${encodeURIComponent(discordId)}`);
+        if (!resp.ok) return null;
+        return await resp.json();
+    } catch { return null; }
+} 
+
+async function fetchTelegramUser(username) {
+    try {
+        const resp = await fetch(`/internal/api/telegram-user/${encodeURIComponent(username)}`);
+        if (!resp.ok) return null;
+        const data = await resp.json();
+        return data.display_name || null;
+    } catch (e) {
+        console.error('Error fetching telegram user:', e);
+        return null;
+    }
+}
+
+function fetchDonorAvatar(type, usernameOrId) {
+    if (!usernameOrId) return '';
+    if (type === 'telegram') {
+        return `/internal/api/telegram-avatar/${encodeURIComponent(usernameOrId)}`;
+    } else if (type === 'discord') {
+        return `/internal/api/discord-avatar/${encodeURIComponent(usernameOrId)}`;
+    }
+    return '';
+}
+
+document.getElementById('add-donor-btn').onclick = async function(e) {
+    e.preventDefault();
+    const type = document.getElementById('donor-type').value;
+    let username = document.getElementById('donor-username').value.trim();
+    if (!username) return;
+    let label = '';
+    let avatar = '';
+    if (type === 'telegram') {
+        if (username.startsWith('@')) username = username.slice(1);
+        const displayName = await fetchTelegramUser(username);
+        label = `Telegram: ${displayName || username} (${username})`;
+        avatar = fetchDonorAvatar(type, username);
+    } else if (type === 'discord') {
+        const userData = await fetchDiscordUser(username);
+        if (userData && userData.username) {
+            label = `Discord: ${userData.display_name || userData.username}`;
+            avatar = userData.avatar_url || 'https://cdn.discordapp.com/embed/avatars/0.png';
+        } else {
+            label = 'Discord: ' + username;
+            avatar = 'https://cdn.discordapp.com/embed/avatars/0.png';
+        }
+    }
+    donorSelect.addOption({value: label, text: label, avatar: avatar});
+    donorSelect.addItem(label);
+    const avatarsDiv = document.getElementById('donor-avatars');
+    const img = document.createElement('img');
+    img.src = avatar;
+    img.alt = label;
+    avatarsDiv.appendChild(img);
+    document.getElementById('donor-username').value = '';
+};
+
+// Load existing donators from hidden field
+const existingDonators = document.getElementById('donators-hidden').value;
+if (existingDonators) {
+    const donors = existingDonators.split(',').map(d => d.trim()).filter(d => d);
+    for (let donor of donors) {
+        donorSelect.addOption({value: donor, text: donor, avatar: ''});
+        donorSelect.addItem(donor);
+        
+        // Try to fetch avatar for existing donors
+        if (donor.startsWith('Telegram:')) {
+            // Parse format: "telegram: displayname (username)"
+            const match = donor.match(/Telegram:\s+(.+?)\s+\((.+?)\)/);
+            if (match) {
+                const username = match[2];
+                const avatarUrl = `/internal/api/telegram-avatar/${encodeURIComponent(username)}`;
+                const avatarsDiv = document.getElementById('donor-avatars');
+                const img = document.createElement('img');
+                img.src = avatarUrl;
+                img.alt = donor;
+                avatarsDiv.appendChild(img);
+            }
+        } else if (donor.startsWith('Discord:')) {
+            const avatarsDiv = document.getElementById('donor-avatars');
+            const img = document.createElement('img');
+            img.src = 'https://cdn.discordapp.com/embed/avatars/0.png';
+            img.alt = donor;
+            avatarsDiv.appendChild(img);
+        }
+    }
+}
+
+// Update hidden field on form submit
+document.querySelector('form').addEventListener('submit', function() {
+    const selected = donorSelect.items;
+    document.getElementById('donators-hidden').value = selected.join(',');
+});
+</script>
+{% endblock %}

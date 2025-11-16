@@ -1,0 +1,188 @@
+{% extends 'archive/admin/base_admin.html' %}
+
+{% block title %}Dashboard - Admin{% endblock %}
+
+{% block content %}
+<style>
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2.5rem;
+    }
+    .dashboard-section {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+        gap: 2rem;
+        margin-bottom: 2.5rem;
+        width: 100%;
+    }
+    .kpi-card {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius);
+        padding: 1.5rem;
+        box-shadow: var(--shadow);
+    }
+    .kpi-card .kpi-label {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+        margin-top: 0.35rem;
+    }
+    .kpi-meta {
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+        margin-top: 0.6rem;
+        display: flex;
+        gap: 0.4rem;
+        align-items: center;
+    }
+    .card-title {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        margin-bottom: 1.2rem;
+    }
+    .card-title i {
+        color: var(--accent-color);
+    }
+    .table-compact th,
+    .table-compact td {
+        padding: 0.6rem 0.75rem;
+    }
+    .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.2rem 0.6rem;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        border: 1px solid var(--border-color);
+    }
+    .pill-success { color: var(--success-color); }
+    .pill-warning { color: var(--warning-color); }
+    .quick-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+</style>
+
+<div class="dashboard-grid">
+    <div class="kpi-card">
+        <div class="stat-number">{{ total_documents }}</div>
+        <div class="kpi-label">Total Documents</div>
+    </div>
+    <div class="kpi-card">
+        <div class="stat-number">{{ published_documents }}</div>
+        <div class="kpi-label">Published</div>
+    </div>
+    <div class="kpi-card">
+        <div class="stat-number">{{ total_categories }}</div>
+        <div class="kpi-label">Categories</div>
+    </div>
+    <div class="kpi-card">
+        <div class="stat-number">{{ total_pdf_views }}</div>
+        <div class="kpi-label">Total Document Views</div>
+    </div>
+    <div class="kpi-card">
+        <div class="stat-number">{{ recent_visitors }}</div>
+        <div class="kpi-label">Visitors (30d)</div>
+    </div>
+    <div class="kpi-card">
+        <div class="stat-number">{{ recent_pageviews }}</div>
+        <div class="kpi-label">Pageviews (30d)</div>
+    </div>
+</div>
+
+<div class="dashboard-grid">
+    <div class="card" style="background: var(--bg-secondary);">
+        <h3 class="card-title"><i class="bi bi-speedometer2"></i> Archive Health</h3>
+        <div style="font-size: 0.9rem; color: var(--text-secondary);">
+            <div style="margin-bottom: 0.8rem; display: flex; justify-content: space-between; align-items: center;">
+                <span>📄 Documents Indexed</span>
+                <strong>{{ total_documents }}</strong>
+            </div>
+            <div style="margin-bottom: 0.8rem; display: flex; justify-content: space-between; align-items: center;">
+                <span>✅ Published</span>
+                <strong>{{ published_documents }}</strong>
+            </div>
+            <div style="margin-bottom: 0.8rem; display: flex; justify-content: space-between; align-items: center;">
+                <span>📂 Conventions</span>
+                <strong>{{ total_categories }}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span>🔍 Coverage</span>
+                <strong>{{ coverage_percentage|default:"—" }}</strong>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card" style="background: var(--bg-secondary);">
+        <h3 class="card-title"><i class="bi bi-graph-up"></i> Top Referrer</h3>
+        <div style="font-size: 1.2rem; font-weight: bold; color: var(--accent-color); margin-bottom: 0.8rem;">
+            {{ top_referer|default:"Direct Traffic" }}
+        </div>
+        <div style="font-size: 0.9rem; color: var(--text-secondary);">
+            <p style="margin: 0.5rem 0;">Most traffic originates from:</p>
+            <code style="background: rgba(0, 212, 255, 0.1); padding: 0.4rem 0.6rem; border-radius: 4px; display: inline-block; font-size: 0.85rem;">{{ top_referer|default:"Direct / No referrer" }}</code>
+        </div>
+    </div>
+</div>
+
+<div class="dashboard-section">
+    <div class="card" style="background: var(--bg-secondary); min-width: 0;">
+        <h3 class="card-title"><i class="bi bi-file-earmark-pdf"></i> Recent Documents</h3>
+        <div style="overflow-x: auto;">
+        <table class="table-compact">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Source</th>
+                    <th>Uploaded</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for doc in recent_documents %}
+                <tr>
+                    <td><a href="{% url 'admin_edit_document' doc.slug %}">{{ doc.title }}</a></td>
+                    <td>
+                        {% if doc.is_scanned %}
+                            <span class="pill pill-warning"><i class="bi bi-upc-scan"></i> Scanned</span>
+                        {% else %}
+                            <span class="pill pill-success"><i class="bi bi-filetype-pdf"></i> Digital</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ doc.uploaded_at|date:"M d, Y" }}</td>
+                    <td>
+                        {% if doc.is_published %}
+                            <span class="pill pill-success"><i class="bi bi-check-circle"></i> Published</span>
+                        {% else %}
+                            <span class="pill pill-warning"><i class="bi bi-x-circle"></i> Draft</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" style="text-align: center; color: var(--text-muted);">No documents yet</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+</div>
+
+<div class="card" style="text-align: center; background: var(--bg-secondary);">
+    <h3 class="card-title" style="justify-content: center;"><i class="bi bi-lightning-charge"></i> Quick Actions</h3>
+    <div class="quick-actions">
+        <a href="{% url 'admin_upload' %}" class="btn btn-success"><i class="bi bi-cloud-upload"></i> Upload New PDF</a>
+        <a href="{% url 'admin_documents' %}" class="btn"><i class="bi bi-files"></i> Manage Documents</a>
+        <a href="{% url 'admin_categories' %}" class="btn btn-secondary"><i class="bi bi-folder"></i> Manage Categories</a>
+        <a href="{% url 'admin_schedules' %}" class="btn btn-secondary"><i class="bi bi-calendar-event"></i> Manage Schedules</a>
+    </div>
+</div>
+{% endblock %}
+

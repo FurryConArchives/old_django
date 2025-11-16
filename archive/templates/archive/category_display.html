@@ -1,0 +1,269 @@
+{% extends 'archive/base.html' %}
+
+{% block title %}Browse by Convention - Furry Con Archives{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        margin-bottom: 2.5rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .page-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .page-header h1 i {
+        color: var(--accent-color);
+        font-size: 2rem;
+    }
+
+    .page-header p {
+        color: var(--text-secondary);
+        margin-top: 0.75rem;
+        font-size: 1.1rem;
+    }
+
+    .category-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+        gap: 2rem;
+    }
+
+    .category-card {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius);
+        overflow: hidden;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow);
+        cursor: pointer;
+        text-decoration: none;
+        display: block;
+        color: inherit;
+    }
+
+    .category-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-hover);
+        border-color: var(--primary-color);
+    }
+
+    .category-logo-container {
+        position: relative;
+        width: 100%;
+        padding-top: 25%; /* 4:1 aspect ratio */
+        background: var(--bg-tertiary);
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .category-logo {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        padding: 1.5rem;
+        transition: transform 0.3s ease;
+    }
+
+    .category-card:hover .category-logo {
+        transform: scale(1.05);
+    }
+
+    .category-logo-placeholder {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-muted);
+        font-size: 3rem;
+    }
+
+    .category-content {
+        padding: 1.5rem;
+    }
+
+    .category-name {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 0.75rem;
+        line-height: 1.3;
+    }
+
+    .category-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+    }
+
+    .meta-item i {
+        color: var(--accent-color);
+        font-size: 1rem;
+        width: 18px;
+        flex-shrink: 0;
+    }
+
+    .meta-item span {
+        flex: 1;
+    }
+
+    .active-years {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+    }
+
+    .year-badge {
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+        padding: 0.25rem 0.75rem;
+        border-radius: var(--radius-sm);
+        font-size: 0.85rem;
+        font-weight: 600;
+        border: 1px solid var(--border-color);
+        transition: all 0.3s ease;
+    }
+
+    .category-card:hover .year-badge {
+        background: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
+    }
+
+    .document-count {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border-color);
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .document-count i {
+        color: var(--accent-color);
+    }
+
+    .empty-state {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 4rem 2rem;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius);
+    }
+
+    .empty-state i {
+        font-size: 4rem;
+        color: var(--text-muted);
+        margin-bottom: 1rem;
+    }
+
+    .empty-state p {
+        color: var(--text-secondary);
+        font-size: 1.1rem;
+    }
+
+    @media (max-width: 768px) {
+        .category-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .page-header h1 {
+            font-size: 2rem;
+        }
+
+        .category-logo-container {
+            padding-top: 30%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>
+        <i class="bi bi-grid-3x3-gap"></i>
+        Browse by Convention
+    </h1>
+    <p>Explore documents organized by convention and category</p>
+</div>
+
+<div class="category-grid">
+    {% for category in categories %}
+    <a href="{% url 'convention_detail' slug=category.slug %}" class="category-card">
+        <div class="category-logo-container">
+            {% if category.logo and category.logo.strip %}
+            <img src="{{ category.logo }}" alt="{{ category.name }} logo" class="category-logo">
+            {% else %}
+            <div class="category-logo-placeholder">
+                <i class="bi bi-folder"></i>
+            </div>
+            {% endif %}
+        </div>
+        <div class="category-content">
+            <h2 class="category-name">{{ category.name }}</h2>
+            <div class="category-meta">
+                {% if category.location %}
+                <div class="meta-item">
+                    <i class="bi bi-geo-alt"></i>
+                    <span>{{ category.location }}</span>
+                </div>
+                {% endif %}
+                {% if category.active_years %}
+                <div class="meta-item">
+                    <i class="bi bi-calendar"></i>
+                    <div class="active-years">
+                        {% for year in category.active_years|slice:":10" %}
+                        <span class="year-badge">{{ year }}</span>
+                        {% endfor %}
+                        {% if category.active_years|length > 10 %}
+                        <span class="year-badge">+{{ category.active_years|length|add:"-10" }} more</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            <div class="document-count">
+                <i class="bi bi-file-earmark-pdf"></i>
+                <span>{{ category.doc_count }} document{{ category.doc_count|pluralize }}</span>
+            </div>
+        </div>
+    </a>
+    {% empty %}
+    <div class="empty-state">
+        <i class="bi bi-folder-x"></i>
+        <p>No categories available yet.</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+

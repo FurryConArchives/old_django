@@ -1,0 +1,21 @@
+{% if page_obj and page_obj.paginator.count %}
+<div class="pagination" style="margin-top:1.5rem; display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap; justify-content:center; width:100%;">
+    {% if page_obj.has_previous %}
+        <a href="?{% if search_query %}q={{ search_query }}&{% endif %}page=1" title="First page"><i class="bi bi-chevron-double-left"></i></a>
+        <a href="?{% if search_query %}q={{ search_query }}&{% endif %}page={{ page_obj.previous_page_number }}" title="Previous page"><i class="bi bi-chevron-left"></i></a>
+    {% endif %}
+
+    {% for page_num in page_obj.paginator.page_range %}
+        {% if page_obj.number == page_num %}
+            <span class="current">{{ page_num }}</span>
+        {% elif page_num > page_obj.number|add:'-3' and page_num < page_obj.number|add:'3' %}
+            <a href="?{% if search_query %}q={{ search_query }}&{% endif %}page={{ page_num }}">{{ page_num }}</a>
+        {% endif %}
+    {% endfor %}
+
+    {% if page_obj.has_next %}
+        <a href="?{% if search_query %}q={{ search_query }}&{% endif %}page={{ page_obj.next_page_number }}" title="Next page"><i class="bi bi-chevron-right"></i></a>
+        <a href="?{% if search_query %}q={{ search_query }}&{% endif %}page={{ page_obj.paginator.num_pages }}" title="Last page"><i class="bi bi-chevron-double-right"></i></a>
+    {% endif %}
+</div>
+{% endif %}

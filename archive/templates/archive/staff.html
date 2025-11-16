@@ -1,0 +1,439 @@
+{% extends 'archive/base.html' %}
+{% load archive_tags %}
+
+{% block title %}Staff & Contributors - Furry Con Archives{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Layout */
+    .board-container {
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    .board-header {
+        text-align: center;
+        margin-bottom: 4rem;
+        padding-bottom: 2rem;
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    .board-header h1 {
+        font-size: 2.5rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, var(--text-primary), var(--accent-color));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+    }
+
+    .board-header p {
+        color: var(--text-secondary);
+        font-size: 1.05rem;
+        font-weight: 500;
+    }
+
+    .directors-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 2rem;
+        margin-top: 3rem;
+        max-width: 90%;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    /* Director card styles (kept compact) */
+    .director-card {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius);
+        padding: 2rem;
+        text-align: center;
+        transition: all 0.25s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .director-avatar {
+        width: 120px;
+        height: 120px;
+        margin: 0 auto 1.25rem;
+        border-radius: 50%;
+        border: 3px solid var(--primary-color);
+        overflow: hidden;
+    }
+
+    .director-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+    }
+
+    .director-name {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 0.25rem;
+    }
+
+    .director-role-inline {
+        display: block;
+        font-size: 0.85rem;
+        color: var(--accent-color);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.25rem;
+    }
+
+    .director-description {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+    }
+
+    .director-links {
+        margin-top: 0.75rem;
+        display: flex;
+        justify-content: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+
+
+    .director-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--primary-color);
+        text-decoration: none;
+        font-size: 0.9rem;
+        font-weight: 600;
+        padding: 0.75rem 1.5rem;
+        background: rgba(0, 102, 204, 0.1);
+        border: 1px solid var(--primary-color);
+        border-radius: 6px;
+        transition: all 0.3s ease;
+        margin: 0 0.5rem;
+    }
+
+    .director-links {
+        display: flex;
+        justify-content: center;
+        gap: 0.25rem;
+        flex-wrap: wrap;
+    }
+
+    .director-link.bluesky {
+        color: #22c55e;
+        border-color: #22c55e;
+        background: rgba(34, 197, 94, 0.1);
+    }
+
+    .director-link.bluesky:hover {
+        background: #22c55e;
+        color: var(--bg-primary);
+    }
+
+    .director-link.telegram {
+        color: #0088cc;
+        border-color: #0088cc;
+        background: rgba(0, 136, 204, 0.1);
+    }
+
+    .director-link.telegram:hover {
+        background: #0088cc;
+        color: var(--bg-primary);
+    }
+
+    .director-link.discord {
+        color: #5865f2;
+        border-color: #5865f2;
+        background: rgba(88, 101, 242, 0.1);
+    }
+
+    .director-link.discord:hover {
+        background: #5865f2;
+        color: var(--bg-primary);
+        transition: all 0.3s ease;
+    }
+
+    .director-link.twitter {
+        color: #1d9bf0;
+        border-color: #1d9bf0;
+        background: rgba(29, 155, 240, 0.12);
+    }
+
+    .director-link.twitter:hover {
+        background: #1d9bf0;
+        color: var(--bg-primary);
+    }
+
+    .director-link:hover {
+        background: var(--primary-color);
+        color: var(--bg-primary);
+        transform: translateX(4px);
+    }
+
+    .director-link i {
+        font-size: 1rem;
+    }
+
+
+    /* Special boxes (centered) */
+    .special-box {
+        max-width: 1000px;
+        margin: 2rem 3rem;
+        padding: 1rem 1.25rem;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px dashed var(--border-color);
+        box-sizing: border-box;
+    }
+
+    .special-box+.special-box {
+        margin-top: 1.25rem;
+    }
+
+    .special-section {
+        margin: 0.5rem 0;
+    }
+
+    .special-title {
+        font-size: 1.05rem;
+        color: var(--text-primary);
+        margin: 0 0 0.5rem 0;
+        font-weight: 700;
+    }
+
+    .special-list {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-start;
+    }
+
+    .thanks-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+
+    .thanks-avatar {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 2px solid var(--primary-color);
+        display: inline-block;
+    }
+
+    .thanks-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .thanks-name {
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    .staff-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        margin-left: 0.5rem;
+        padding: 0.1rem 0.45rem;
+        border-radius: 999px;
+        border: 1px solid rgba(0, 212, 255, 0.4);
+        background: rgba(0, 212, 255, 0.12);
+        color: var(--accent-color);
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        vertical-align: middle;
+    }
+
+    .thanks-sub {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+    }
+
+    .thanks-handle {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        margin-top: 0.125rem;
+        font-family: 'Monaco', 'Courier New', monospace;
+    }
+
+    @media (max-width: 640px) {
+        .special-list {
+            gap: 0.5rem;
+            justify-content: center;
+        }
+
+        .thanks-avatar {
+            width: 48px;
+            height: 48px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="board-header">
+    <h1><i class="ri-star-fill" style="color: var(--accent-color); font-size:2.5rem"></i> Staff & Contributors</h1>
+    <p>The dedicated team and contributors behind the Furry Con Archives</p>
+</div>
+<div class="board-container">
+    <div class="directors-grid">
+        {% for director in directors %}
+        <div class="director-card">
+            <div class="director-avatar">
+                <img src="{{ director.avatar_url }}" alt="{{ director.display_name }}"
+                    loading="lazy"
+                    onerror="this.style.display='none'; this.parentElement.querySelector('.star-icon')?.style.display='flex';">
+            </div>
+            <div class="director-name">
+                {% if director.role %}<span class="director-role-inline">{{ director.role }}</span>{% endif %}
+                {{ director.display_name|default:director.username }}
+            </div>
+            {% if director.description %}
+            <div class="director-description">{{ director.description }}</div>
+            {% endif %}
+            <br>
+            <a href="https://t.me/{{ director.username }}" target="_blank" rel="noopener noreferrer"
+                class="director-link telegram">
+                <i class="ri-telegram-2-fill" style="font-size: 1.6rem;"></i>
+                {{ director.username }}
+            </a>
+            {% if director.discord_username %}
+            <a href="discord://-/users//{{ director.discord_id }}" target="_blank" rel="noopener noreferrer"
+                class="director-link discord">
+                <i class="ri-discord-fill" style="font-size: 1.6rem;"></i>
+                {{ director.discord_username }}
+            </a>
+            {% endif %}
+            {% if director.bluesky_handle %}
+            <a href="https://bsky.app/profile/{{ director.bluesky_handle }}" target="_blank" rel="noopener noreferrer"
+                class="director-link bluesky">
+                <i class="ri-bluesky-fill" style="font-size: 1.6rem;"></i>
+                {{ director.bluesky_handle|cut:'.bsky.social' }}
+            </a>
+            {% endif %}
+            {% if director.twitter_username %}
+            <a href="https://twitter.com/{{ director.twitter_username }}" target="_blank" rel="noopener noreferrer"
+                class="director-link twitter">
+                <i class="ri-twitter-x-fill" style="font-size: 1.6rem;"></i>
+                {{ director.twitter_username }}
+            </a>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Ko-fi Donator: rendered from context -->
+    {% if kofi_donator %}
+    <div class="special-box partners-box" role="region" aria-label="Partners">
+        <h3 class="special-title">Donators</h3>
+        <div class="special-list">
+            <div class="thanks-item">
+                <a href="https://ko-fi.com/furryconarchives" target="_blank" rel="noopener noreferrer">
+                    <span class="thanks-avatar">
+                        <img src="{{ kofi_donator.avatar_url }}" alt="Ko-fi Donator" loading="lazy"
+                            onerror="this.style.display='none'" />
+                    </span>
+                </a>
+                <div>
+                    <div class="thanks-name">{{ kofi_donator.name|default:'Ko-fi Donator' }}</div>
+                    <div class="thanks-handle">
+                        {% if kofi_donator.discord_username %}@{{ kofi_donator.discord_username }}{% endif %}</div>
+                    <div class="thanks-sub">{% if kofi_donator.amount %}Donated: ${{ kofi_donator.amount }}{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    <!-- Contributors: centered box -->
+    <div class="special-box contributors-box" role="region" aria-label="Contributors">
+        <h3 class="special-title">Contributors</h3>
+        <div class="special-list">
+            {% for contributor in vault_contributors %}
+            <div class="thanks-item">
+                {% if contributor.type == 'telegram' %}
+                <a href="https://t.me/{{ contributor.username }}" target="_blank" rel="noopener noreferrer">
+                    <span class="thanks-avatar">
+                        {% if contributor.avatar_url %}
+                        <img src="{{ contributor.avatar_url }}"
+                            alt="{{ contributor.display_name }}" loading="lazy"
+                            onerror="this.style.display='none'" />
+                        {% endif %}
+                    </span>
+                </a>
+                <div>
+                    <div class="thanks-name">
+                        {{ contributor.display_name }}
+                        {% if contributor.is_staff %}
+                        <span class="staff-badge"></i> Staff</span>
+                        {% endif %}
+                    </div>
+                    <div class="thanks-handle">@{{ contributor.username }}</div>
+                    <div class="thanks-sub">{{ contributor.contributions }} contribution{{ contributor.contributions|pluralize }}</div>
+                </div>
+                {% elif contributor.type == 'discord' %}
+                <a href="https://discord.com/users/{{ contributor.username }}" target="_blank" rel="noopener noreferrer">
+                    <span class="thanks-avatar">
+                        {% if contributor.avatar_url %}
+                        <img src="{{ contributor.avatar_url }}"
+                            alt="{{ contributor.display_name }}" loading="lazy"
+                            onerror="this.style.display='none'" />
+                        {% endif %}
+                    </span>
+                </a>
+                <div>
+                    <div class="thanks-name">
+                        {{ contributor.display_name|default:contributor.username }}
+                        {% if contributor.is_staff %}
+                        <span class="staff-badge"></i> Staff</span>
+                        {% endif %}
+                    </div>
+                    {% if contributor.discord_handle %}
+                    <div class="thanks-handle">@{{ contributor.discord_handle }}</div>
+                    {% endif %}
+                    <div class="thanks-sub">{{ contributor.contributions }} contribution{{ contributor.contributions|pluralize }}</div>
+                </div>
+                {% else %}
+                <span class="thanks-avatar">
+                    <span style="display: inline-block; width: 100%; height: 100%; border-radius: 50%; background: var(--bg-tertiary); text-align: center; line-height: 40px; font-size: 1rem; color: var(--text-secondary);">?</span>
+                </span>
+                <div>
+                    <div class="thanks-name">
+                        {{ contributor.display_name }}
+                        {% if contributor.is_staff %}
+                        <span class="staff-badge"></i> Staff</span>
+                        {% endif %}
+                    </div>
+                    <div class="thanks-sub">{{ contributor.contributions }} contribution{{ contributor.contributions|pluralize }}</div>
+                </div>
+                {% endif %}
+            </div>
+            {% empty %}
+            <p style="color: var(--text-secondary); margin: 0;">No contributors listed yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

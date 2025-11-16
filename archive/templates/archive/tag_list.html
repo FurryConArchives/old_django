@@ -1,0 +1,72 @@
+{% extends 'archive/base.html' %}
+
+{% block title %}Tags - Furry Con Archives{% endblock %}
+
+{% block extra_css %}
+<style>
+    .tags-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1rem;
+    }
+    
+    .tag-card {
+        background: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+    
+    .tag-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .tag-card h3 {
+        margin-bottom: 0.5rem;
+        color: #667eea;
+    }
+    
+    .tag-card h3 a {
+        color: #667eea;
+        text-decoration: none;
+    }
+    
+    .tag-card h3 a:hover {
+        color: #5568d3;
+    }
+    
+    .tag-count {
+        color: #666;
+        font-size: 0.9rem;
+    }
+    
+    .tag-description {
+        color: #666;
+        margin-top: 0.5rem;
+        line-height: 1.5;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h2 style="margin-bottom: 1.5rem;">Browse by Tag</h2>
+
+<div class="tags-grid">
+    {% for tag in tags %}
+    <div class="tag-card">
+        <h3><a href="{% url 'document_list' %}?tag={{ tag.slug }}">{{ tag.name }}</a></h3>
+        <div class="tag-count">{{ tag.doc_count }} document{{ tag.doc_count|pluralize }}</div>
+        {% if tag.description %}
+        <p class="tag-description">{{ tag.description }}</p>
+        {% endif %}
+    </div>
+    {% empty %}
+    <div class="card">
+        <p>No tags available yet.</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
